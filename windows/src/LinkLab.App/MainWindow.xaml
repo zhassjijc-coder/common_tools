@@ -1,0 +1,42 @@
+<Window x:Class="LinkLab.App.MainWindow" xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" xmlns:local="clr-namespace:LinkLab.App" xmlns:shell="clr-namespace:System.Windows.Shell;assembly=PresentationFramework"
+ Title="LinkLab · 连接实验室" Width="1360" Height="920" MinWidth="1080" MinHeight="720" WindowStartupLocation="CenterScreen" Background="{DynamicResource Bg}" Foreground="{DynamicResource Text}" FontFamily="Segoe UI, Microsoft YaHei UI" WindowStyle="None" ResizeMode="CanResize" UseLayoutRounding="True" TextOptions.TextFormattingMode="Display">
+ <shell:WindowChrome.WindowChrome><shell:WindowChrome CaptionHeight="54" ResizeBorderThickness="6" CornerRadius="0" GlassFrameThickness="0"/></shell:WindowChrome.WindowChrome>
+ <Border BorderBrush="{DynamicResource Line}" BorderThickness="1" Background="{DynamicResource Bg}"><Grid>
+  <Grid.RowDefinitions><RowDefinition Height="54"/><RowDefinition Height="*"/><RowDefinition Height="32"/></Grid.RowDefinitions>
+  <Border Background="{DynamicResource Sidebar}" BorderBrush="{DynamicResource Line}" BorderThickness="0,0,0,1"><Grid Margin="20,0,6,0">
+   <StackPanel Orientation="Horizontal" VerticalAlignment="Center"><TextBlock Text="◈" Foreground="{DynamicResource Accent}" FontSize="26" Margin="0,0,10,0"/><TextBlock Text="LinkLab" FontSize="18" FontWeight="Bold" VerticalAlignment="Center"/><TextBlock Text="/  连接实验室" Foreground="{DynamicResource Muted}" Margin="12,0,0,0" VerticalAlignment="Center" FontSize="12"/></StackPanel>
+   <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center" shell:WindowChrome.IsHitTestVisibleInChrome="True">
+    <Button Content="◐  切换主题" Command="{Binding ThemeCommand}" Margin="0,0,8,0" Padding="12,6" ToolTip="切换深色与浅色主题"/>
+    <Button Content="保存配置" Command="{Binding SaveCommand}" Margin="0,0,14,0" Padding="12,6"/>
+    <Button Content="─" Click="Minimize_Click" Padding="14,6" BorderThickness="0" Background="Transparent" ToolTip="最小化"/>
+    <Button Content="□" Click="Maximize_Click" Padding="14,6" BorderThickness="0" Background="Transparent" ToolTip="最大化 / 还原"/>
+    <Button x:Name="CloseWindowButton" Content="✕" Click="Close_Click" Padding="14,6" BorderThickness="0" Background="Transparent" ToolTip="关闭"/>
+   </StackPanel>
+  </Grid></Border>
+  <Grid Grid.Row="1"><Grid.ColumnDefinitions><ColumnDefinition Width="204"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+   <Border Background="{DynamicResource Sidebar}" BorderBrush="{DynamicResource Line}" BorderThickness="0,0,1,0"><DockPanel Margin="14,24,14,18">
+    <StackPanel DockPanel.Dock="Bottom" Margin="0,14,0,0">
+     <Border BorderBrush="{DynamicResource Line}" BorderThickness="0,1,0,0" Padding="0,12,0,0">
+      <Button x:Name="SystemSettingsButton" Command="{Binding NavigateCommand}" CommandParameter="quick" Padding="13,13" BorderThickness="0" HorizontalContentAlignment="Left" ToolTip="系统配置">
+       <Button.Style><Style TargetType="Button" BasedOn="{StaticResource {x:Type Button}}"><Setter Property="Background" Value="Transparent"/><Style.Triggers><DataTrigger Binding="{Binding IsSettingsSelected}" Value="True"><Setter Property="Background" Value="{DynamicResource Selected}"/></DataTrigger></Style.Triggers></Style></Button.Style>
+       <StackPanel Orientation="Horizontal"><TextBlock Text="⚙" Foreground="{DynamicResource QuickAccent}" FontSize="19" Width="31" VerticalAlignment="Center"/><TextBlock Text="系统配置" Foreground="{DynamicResource Text}" FontSize="13" VerticalAlignment="Center"/></StackPanel>
+      </Button>
+     </Border>
+     <StackPanel Margin="10,12,10,0"><TextBlock Text="本地设备 · 本地数据" Foreground="{DynamicResource Muted}" FontSize="11"/><TextBlock Text="{Binding VersionLabel}" Foreground="{DynamicResource Muted}" FontSize="10" Margin="0,8,0,0"/></StackPanel>
+    </StackPanel>
+    <TextBlock DockPanel.Dock="Top" Text="工作空间" Style="{StaticResource Caption}" Margin="13,0,0,16" FontSize="11"/>
+    <ListBox x:Name="ModuleNavigationList" ItemsSource="{Binding ModuleNavigation}" SelectedItem="{Binding SelectedModule}" Background="Transparent" BorderThickness="0" ScrollViewer.HorizontalScrollBarVisibility="Disabled">
+     <ListBox.ItemContainerStyle><Style TargetType="ListBoxItem"><Setter Property="HorizontalContentAlignment" Value="Stretch"/><Setter Property="Margin" Value="0,0,0,7"/><Setter Property="Padding" Value="13,13"/><Setter Property="Cursor" Value="Hand"/><Setter Property="Template"><Setter.Value><ControlTemplate TargetType="ListBoxItem"><Border x:Name="bd" CornerRadius="8" Background="Transparent" Padding="{TemplateBinding Padding}"><ContentPresenter/></Border><ControlTemplate.Triggers><Trigger Property="IsSelected" Value="True"><Setter TargetName="bd" Property="Background" Value="{DynamicResource Selected}"/></Trigger><Trigger Property="IsMouseOver" Value="True"><Setter TargetName="bd" Property="Background" Value="{DynamicResource Hover}"/></Trigger></ControlTemplate.Triggers></ControlTemplate></Setter.Value></Setter></Style></ListBox.ItemContainerStyle>
+     <ListBox.ItemTemplate><DataTemplate><StackPanel Orientation="Horizontal"><TextBlock Text="{Binding Icon}" local:ThemeBrush.Key="{Binding Accent}" FontSize="19" Width="31" VerticalAlignment="Center"/><TextBlock Text="{Binding Title}" Foreground="{DynamicResource Text}" VerticalAlignment="Center" FontSize="13"/></StackPanel></DataTemplate></ListBox.ItemTemplate>
+    </ListBox>
+   </DockPanel></Border>
+   <Grid Grid.Column="1" Margin="30,26,30,20"><Grid.RowDefinitions><RowDefinition Height="74"/><RowDefinition Height="*"/></Grid.RowDefinitions>
+    <Grid><StackPanel><TextBlock Text="{Binding CurrentTitle}" FontSize="27" FontWeight="SemiBold"/><TextBlock Text="{Binding CurrentSubtitle}" Foreground="{DynamicResource Muted}" Margin="0,8,0,0" FontSize="12"/></StackPanel><Border HorizontalAlignment="Right" VerticalAlignment="Top" Background="{DynamicResource Card}" BorderBrush="{DynamicResource Line}" BorderThickness="1" CornerRadius="20" Padding="14,9"><StackPanel Orientation="Horizontal"><Ellipse Width="6" Height="6" Fill="{DynamicResource Accent}" Margin="0,0,8,0"/><TextBlock Text="{Binding Hub.ConnectionText}" FontSize="11" Foreground="{DynamicResource Muted}"/></StackPanel></Border></Grid>
+    <ContentControl Grid.Row="1" Content="{Binding CurrentPage}" HorizontalContentAlignment="Stretch" VerticalContentAlignment="Stretch"/>
+   </Grid>
+  </Grid>
+  <Border Grid.Row="2" Background="{DynamicResource Sidebar}" BorderBrush="{DynamicResource Line}" BorderThickness="0,1,0,0"><DockPanel Margin="18,0"><StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Center"><TextBlock Text="TX" Foreground="{DynamicResource Accent}" FontSize="10"/><TextBlock Text="{Binding Hub.TxText}" FontSize="11" Margin="8,0,22,0"/><TextBlock Text="RX" Foreground="{DynamicResource NetworkAccent}" FontSize="10"/><TextBlock Text="{Binding Hub.RxText}" FontSize="11" Margin="8,0,0,0"/></StackPanel><TextBlock Text="{Binding Hub.Notice}" VerticalAlignment="Center" Foreground="{DynamicResource Muted}" FontSize="11" TextTrimming="CharacterEllipsis" Margin="0,0,20,0"/></DockPanel></Border>
+ </Grid></Border>
+</Window>
+
+

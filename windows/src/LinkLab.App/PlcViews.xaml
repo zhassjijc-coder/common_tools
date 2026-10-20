@@ -1,0 +1,98 @@
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" xmlns:local="clr-namespace:LinkLab.App">
+  <DataTemplate DataType="{x:Type local:PlcVm}">
+    <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" Padding="0,0,8,0">
+      <StackPanel>
+        <Border Background="{DynamicResource Hero}" BorderBrush="{DynamicResource Line}" BorderThickness="1" CornerRadius="14" Padding="22" Margin="0,0,0,16">
+          <Grid>
+            <StackPanel>
+              <TextBlock Text="PLC LAB  /  读写、监视、模拟" FontSize="22" FontWeight="SemiBold" />
+              <TextBlock Text="从地址到数据，连接你的工业现场。" Foreground="{DynamicResource Muted}" Margin="0,8,0,16" />
+              <WrapPanel>
+                <ComboBox ItemsSource="{Binding Protocols}" SelectedIndex="{Binding ProtocolIndex}" Width="255" Margin="0,0,14,0" IsEnabled="{Binding CanSelectProtocol}" />
+                <ComboBox ItemsSource="{Binding Modes}" SelectedIndex="{Binding Mode}" Width="230" />
+                <Button Content="本机联调  ↗" Command="{Binding LoopbackCommand}" Margin="14,0,0,0" />
+              </WrapPanel>
+            </StackPanel>
+          </Grid>
+        </Border>
+        <Border Style="{StaticResource CardBorder}" Margin="0,0,0,16" Visibility="{Binding IsClient, Converter={StaticResource BoolVisibility}}">
+          <StackPanel>
+            <TextBlock Text="客户端连接" Style="{StaticResource SectionTitle}" />
+            <StackPanel IsEnabled="{Binding CanConfigure}">
+              <WrapPanel>
+                <StackPanel Width="200" Margin="0,0,14,14"><TextBlock Text="IP / 主机名" Style="{StaticResource Caption}" /><TextBox Text="{Binding Host, UpdateSourceTrigger=PropertyChanged}" /></StackPanel>
+                <StackPanel Width="95" Margin="0,0,14,14"><TextBlock Text="端口" Style="{StaticResource Caption}" /><TextBox Text="{Binding Port, UpdateSourceTrigger=PropertyChanged}" /></StackPanel>
+                <StackPanel Width="110" Margin="0,0,14,14"><TextBlock Text="超时 / ms" Style="{StaticResource Caption}" /><TextBox Text="{Binding Timeout, UpdateSourceTrigger=PropertyChanged}" /></StackPanel>
+                <StackPanel Width="110" Margin="0,0,14,14"><TextBlock Text="监视间隔 / ms" Style="{StaticResource Caption}" /><TextBox Text="{Binding Interval, UpdateSourceTrigger=PropertyChanged}" /></StackPanel>
+              </WrapPanel>
+              <WrapPanel Visibility="{Binding IsS7, Converter={StaticResource BoolVisibility}}">
+                <StackPanel Width="90" Margin="0,0,14,0"><TextBlock Text="Rack / 机架" Style="{StaticResource Caption}" /><TextBox Text="{Binding Rack, UpdateSourceTrigger=PropertyChanged}" /></StackPanel>
+                <StackPanel Width="90" Margin="0,0,14,0"><TextBlock Text="Slot / 槽位" Style="{StaticResource Caption}" /><TextBox Text="{Binding Slot, UpdateSourceTrigger=PropertyChanged}" /></StackPanel>
+                <StackPanel Width="170" Margin="0,0,14,0"><TextBlock Text="远端 TSAP（0 自动）" Style="{StaticResource Caption}" /><TextBox Text="{Binding RemoteTsap, UpdateSourceTrigger=PropertyChanged}" /></StackPanel>
+                <TextBlock Text="真实 S7 默认端口 102；本机模拟默认 1102" Foreground="{DynamicResource Muted}" FontSize="11" VerticalAlignment="Bottom" Margin="0,0,0,11" />
+              </WrapPanel>
+              <WrapPanel Visibility="{Binding IsMc, Converter={StaticResource BoolVisibility}}">
+                <StackPanel Width="100" Margin="0,0,14,0"><TextBlock Text="网络号" Style="{StaticResource Caption}" /><TextBox Text="{Binding Network, UpdateSourceTrigger=PropertyChanged}" /></StackPanel>
+                <StackPanel Width="100" Margin="0,0,14,0"><TextBlock Text="PLC 号" Style="{StaticResource Caption}" /><TextBox Text="{Binding Station, UpdateSourceTrigger=PropertyChanged}" /></StackPanel>
+                <StackPanel Width="100" Margin="0,0,14,0"><TextBlock Text="I/O 号" Style="{StaticResource Caption}" /><TextBox Text="{Binding IoNumber, UpdateSourceTrigger=PropertyChanged}" /></StackPanel>
+                <StackPanel Width="100"><TextBlock Text="模块站号" Style="{StaticResource Caption}" /><TextBox Text="{Binding Unit, UpdateSourceTrigger=PropertyChanged}" /></StackPanel>
+              </WrapPanel>
+              <WrapPanel Visibility="{Binding IsFins, Converter={StaticResource BoolVisibility}}">
+                <StackPanel Width="120" Margin="0,0,14,0"><TextBlock Text="客户端节点" Style="{StaticResource Caption}" /><TextBox Text="{Binding ClientNode, UpdateSourceTrigger=PropertyChanged}" /></StackPanel>
+                <StackPanel Width="120" Margin="0,0,14,0"><TextBlock Text="目标节点" Style="{StaticResource Caption}" /><TextBox Text="{Binding ServerNode, UpdateSourceTrigger=PropertyChanged}" /></StackPanel>
+                <StackPanel Width="100" Margin="0,0,14,0"><TextBlock Text="目标网络" Style="{StaticResource Caption}" /><TextBox Text="{Binding Network, UpdateSourceTrigger=PropertyChanged}" /></StackPanel>
+                <StackPanel Width="100"><TextBlock Text="目标单元" Style="{StaticResource Caption}" /><TextBox Text="{Binding Unit, UpdateSourceTrigger=PropertyChanged}" /></StackPanel>
+              </WrapPanel>
+            </StackPanel>
+            <WrapPanel Margin="0,18,0,0">
+              <Button Content="连接 PLC" Command="{Binding ConnectCommand}" IsEnabled="{Binding CanConnect}" Style="{StaticResource PrimaryButton}" />
+              <Button Content="断开 / 取消" Command="{Binding DisconnectCommand}" Margin="10,0,0,0" />
+              <TextBlock Text="{Binding ConnectionState}" Foreground="{DynamicResource PlcAccent}" VerticalAlignment="Center" TextWrapping="Wrap" Margin="16,0,0,0" />
+            </WrapPanel>
+            <TextBlock Text="{Binding Status}" TextWrapping="Wrap" Margin="0,12,0,0" AutomationProperties.LiveSetting="Polite">
+              <TextBlock.Style><Style TargetType="TextBlock"><Setter Property="Foreground" Value="{DynamicResource Muted}" /><Style.Triggers><DataTrigger Binding="{Binding HasError}" Value="True"><Setter Property="Foreground" Value="{DynamicResource ErrorAccent}" /></DataTrigger></Style.Triggers></Style></TextBlock.Style>
+            </TextBlock>
+            <TextBlock Text="连接仅建立 TCP 和必要的协议握手；不会读取或写入 PLC 内存。连接状态在操作时更新。" Foreground="{DynamicResource Muted}" FontSize="11" Margin="0,8,0,0" TextWrapping="Wrap" />
+          </StackPanel>
+        </Border>
+        <Border Style="{StaticResource CardBorder}" Margin="0,0,0,16" Visibility="{Binding IsServer, Converter={StaticResource BoolVisibility}}">
+          <StackPanel>
+            <TextBlock Text="虚拟 PLC 服务器" Style="{StaticResource SectionTitle}" />
+            <WrapPanel IsEnabled="{Binding CanConfigureServer}">
+              <StackPanel Width="200" Margin="0,0,14,14"><TextBlock Text="监听 IP" Style="{StaticResource Caption}" /><TextBox Text="{Binding Bind, UpdateSourceTrigger=PropertyChanged}" /></StackPanel>
+              <StackPanel Width="110" Margin="0,0,14,14"><TextBlock Text="监听端口" Style="{StaticResource Caption}" /><TextBox Text="{Binding ServerPort, UpdateSourceTrigger=PropertyChanged}" /></StackPanel>
+              <TextBlock Text="127.0.0.1 仅本机；0.0.0.0 接受局域网连接" Foreground="{DynamicResource Muted}" FontSize="11" Margin="0,32,0,0" />
+            </WrapPanel>
+            <WrapPanel><Button Content="{Binding ServerToggleText}" Command="{Binding ServerCommand}" Style="{StaticResource PrimaryButton}" /><Button Content="导出内存" Command="{Binding SaveMemoryCommand}" Margin="10,0,0,0" /><Button Content="载入内存" Command="{Binding LoadMemoryCommand}" Margin="10,0,0,0" /></WrapPanel>
+            <TextBlock Text="{Binding ServerStatus}" Foreground="{DynamicResource PlcAccent}" Margin="0,14,0,0" TextWrapping="Wrap" />
+            <TextBlock Text="模拟通信和数据区；不执行梯形图。施耐德、台达、汇川的 Modbus TCP 联调请使用 Modbus 主站 / 设备模拟。" Foreground="{DynamicResource Muted}" FontSize="11" Margin="0,8,0,0" TextWrapping="Wrap" />
+          </StackPanel>
+        </Border>
+        <Border Style="{StaticResource CardBorder}" Margin="0,0,0,16">
+          <StackPanel>
+            <TextBlock Text="地址与数据" Style="{StaticResource SectionTitle}" />
+            <WrapPanel IsEnabled="{Binding CanConfigure}">
+              <StackPanel Width="180" Margin="0,0,14,14"><TextBlock Text="起始地址" Style="{StaticResource Caption}" /><TextBox Text="{Binding Address, UpdateSourceTrigger=PropertyChanged}" FontFamily="Consolas" /></StackPanel>
+              <StackPanel Width="120" Margin="0,0,14,14"><TextBlock Text="数据类型" Style="{StaticResource Caption}" /><ComboBox ItemsSource="{Binding DataTypes}" SelectedItem="{Binding DataType}" /></StackPanel>
+              <StackPanel Width="80" Margin="0,0,14,14"><TextBlock Text="值的数量" Style="{StaticResource Caption}" /><TextBox Text="{Binding Count, UpdateSourceTrigger=PropertyChanged}" /></StackPanel>
+              <StackPanel Width="140" Margin="0,0,14,14"><TextBlock Text="字节 / 字顺序" Style="{StaticResource Caption}" /><ComboBox ItemsSource="{Binding Orders}" SelectedItem="{Binding Order}" /></StackPanel>
+            </WrapPanel>
+            <TextBlock Text="{Binding ProtocolHelp}" Foreground="{DynamicResource Muted}" FontSize="11" TextWrapping="Wrap" LineHeight="19" Margin="0,0,0,14" />
+            <StackPanel Visibility="{Binding IsClient, Converter={StaticResource BoolVisibility}}">
+              <TextBlock Text="写入值（空格或逗号分隔，个数必须与数量一致）" Style="{StaticResource Caption}" />
+              <TextBox Text="{Binding Values, UpdateSourceTrigger=PropertyChanged}" FontFamily="Consolas" IsEnabled="{Binding CanConfigure}" Margin="0,0,0,14" />
+              <WrapPanel Margin="0,0,0,14"><Button Content="读取数据" Command="{Binding ReadCommand}" Style="{StaticResource PrimaryButton}" IsEnabled="{Binding CanConfigure}" /><Button Content="写入数据" Command="{Binding WriteCommand}" IsEnabled="{Binding CanConfigure}" Margin="10,0,0,0" /><Button Content="{Binding PollText}" Command="{Binding PollCommand}" Margin="10,0,0,0" /></WrapPanel>
+              <DataGrid ItemsSource="{Binding ClientRows}" Height="205" IsReadOnly="True"><DataGrid.Columns><DataGridTextColumn Header="地址" Binding="{Binding Address}" Width="190" /><DataGridTextColumn Header="值" Binding="{Binding Value}" Width="*" /><DataGridTextColumn Header="原始字节" Binding="{Binding Hex}" Width="240" /></DataGrid.Columns></DataGrid>
+              <TextBlock Text="请求报文" Style="{StaticResource Caption}" Margin="0,14,0,7" /><TextBox Text="{Binding Frame, Mode=OneWay}" Style="{StaticResource CodeBox}" IsReadOnly="True" Height="58" />
+            </StackPanel>
+            <StackPanel Visibility="{Binding IsServer, Converter={StaticResource BoolVisibility}}">
+              <WrapPanel Margin="0,0,0,14"><Button Content="读取模拟内存" Command="{Binding RefreshCommand}" Style="{StaticResource PrimaryButton}" /><Button Content="应用表格修改" Command="{Binding ApplyCommand}" Margin="10,0,0,0" /><TextBlock Text="双击值编辑，应用后生效" VerticalAlignment="Center" Foreground="{DynamicResource Muted}" FontSize="11" Margin="14,0,0,0" /></WrapPanel>
+              <DataGrid ItemsSource="{Binding MemoryRows}" Height="260"><DataGrid.Columns><DataGridTextColumn Header="地址" Binding="{Binding Address}" Width="190" IsReadOnly="True" /><DataGridTextColumn Header="值（可编辑）" Binding="{Binding Value, UpdateSourceTrigger=PropertyChanged}" Width="*" /><DataGridTextColumn Header="原始字节" Binding="{Binding Hex}" Width="240" IsReadOnly="True" /></DataGrid.Columns></DataGrid>
+            </StackPanel>
+          </StackPanel>
+        </Border>
+        <ContentControl Content="{Binding Hub}" ContentTemplate="{DynamicResource LogPanel}" />
+      </StackPanel>
+    </ScrollViewer>
+  </DataTemplate>
+</ResourceDictionary>

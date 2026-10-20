@@ -1,0 +1,69 @@
+# Generated output and local dependency caches (both platforms)
+**/[Bb]in/
+**/[Oo]bj/
+**/.build/
+**/artifacts/
+**/packages/
+**/.venv/
+**/venv/
+**/__pycache__/
+**/*.py[cod]
+**/*.egg-info/
+**/build/
+**/dist/
+**/.pytest_cache/
+**/.mypy_cache/
+**/.ruff_cache/
+**/.test-temp/
+*.nupkg
+*.snupkg
+*.zip
+
+# IDE / user settings
+.vs/
+.idea/
+.vscode/
+*.user
+*.suo
+*.sln.docstates
+
+# Logs, tests, temporary files
+**/TestResults/
+**/coverage/
+.coverage
+*.coverage*
+*.log
+*.tmp
+*.temp
+*.bak
+*.orig
+*.dmp
+
+# Local AI context and working notes, at any project level
+**/.local-docs/
+**/.ai/
+**/.agents/
+**/.codex/
+**/.claude/
+**/.cursor/
+**/.continue/
+**/.aider*
+**/AGENTS.md
+**/CLAUDE.md
+**/GEMINI.md
+**/CODEX.md
+windows/新建文件夹/
+
+# Private configuration and credentials
+.env
+.env.*
+!.env.example
+*.pfx
+*.p12
+*.key
+*.pem
+
+# OS metadata
+.DS_Store
+Thumbs.db
+Desktop.ini

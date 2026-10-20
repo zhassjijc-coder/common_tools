@@ -1,0 +1,12 @@
+<Application x:Class="LinkLab.App.App" xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+  <Application.Resources><ResourceDictionary><ResourceDictionary.MergedDictionaries>
+    <ResourceDictionary Source="Themes.xaml" />
+    <ResourceDictionary Source="Views.xaml" />
+    <ResourceDictionary Source="PlcViews.xaml" />
+    <ResourceDictionary Source="MqttViews.xaml" />
+    <ResourceDictionary Source="NetworkConfigViews.xaml" />
+    <ResourceDictionary Source="QuickViews.xaml" />
+    <ResourceDictionary Source="VirtualSerialViews.xaml" />
+    <ResourceDictionary Source="HomeView.xaml" />
+  </ResourceDictionary.MergedDictionaries></ResourceDictionary></Application.Resources>
+</Application>

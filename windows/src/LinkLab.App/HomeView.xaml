@@ -1,0 +1,57 @@
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" xmlns:local="clr-namespace:LinkLab.App">
+  <DataTemplate DataType="{x:Type local:HomeVm}">
+    <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" Padding="0,0,8,0">
+      <StackPanel>
+        <Border Background="{DynamicResource Hero}" BorderBrush="{DynamicResource Line}" BorderThickness="1" CornerRadius="16" Padding="24,15" Margin="0,0,0,14">
+          <Grid>
+            <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="160"/></Grid.ColumnDefinitions>
+            <StackPanel>
+              <TextBlock Text="LINKLAB  /  YOUR DEVICE WORKSPACE" Foreground="{DynamicResource Accent}" FontSize="10" FontWeight="SemiBold" Margin="0,0,0,5"/>
+              <TextBlock Text="让设备调试，清晰有序。" FontSize="22" FontWeight="SemiBold"/>
+              <TextBlock Text="连接、收发、模拟与分析，从一个工作台开始。" Foreground="{DynamicResource Muted}" FontSize="12" Margin="0,6,0,0"/>
+            </StackPanel>
+            <Border Grid.Column="1" Background="{DynamicResource Input}" BorderBrush="{DynamicResource Line}" BorderThickness="1" CornerRadius="12" Padding="17,13" HorizontalAlignment="Right" VerticalAlignment="Center">
+              <StackPanel><TextBlock x:Name="HomeToolCount" Text="{Binding Shell.ToolCount}" Foreground="{DynamicResource Accent}" FontSize="28" FontWeight="SemiBold"/><TextBlock Text="常用调试工具" Foreground="{DynamicResource Muted}" FontSize="11" Margin="0,3,0,0"/></StackPanel>
+            </Border>
+          </Grid>
+        </Border>
+        <Button Command="{Binding Shell.NavigateCommand}" CommandParameter="virtualserial" Visibility="{Binding Shell.VirtualSerialVisible, Converter={StaticResource BoolVisibility}}" HorizontalContentAlignment="Stretch" Padding="20,10" Margin="0,0,0,8">
+          <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="50"/><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+            <Path Data="M 0 25 L 70 25 L 55 10 M 70 55 L 0 55 L 15 70" Stroke="{DynamicResource VirtualAccent}" StrokeThickness="2.5" Width="30" Height="30" Stretch="Uniform" HorizontalAlignment="Left" VerticalAlignment="Center"/>
+            <StackPanel Grid.Column="1"><TextBlock Text="虚拟串口  /  COM A ⇄ COM B" FontSize="16" FontWeight="SemiBold"/><TextBlock Text="创建一对虚拟端口，无需接线，完成 Modbus RTU 主从站联调。" Foreground="{DynamicResource Muted}" FontSize="12" TextWrapping="Wrap" Margin="0,6,14,0"/></StackPanel>
+            <TextBlock Grid.Column="2" Text="10  /  打开模块 ↗" Foreground="{DynamicResource VirtualAccent}" FontSize="12" VerticalAlignment="Center"/>
+          </Grid>
+        </Button>
+        <ItemsControl ItemsSource="{Binding Tiles}" Margin="-6,0,-6,0">
+          <ItemsControl.ItemsPanel><ItemsPanelTemplate><UniformGrid Columns="3"/></ItemsPanelTemplate></ItemsControl.ItemsPanel>
+          <ItemsControl.ItemTemplate><DataTemplate>
+            <Button Command="{Binding DataContext.Shell.NavigateCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}" CommandParameter="{Binding Key}" Padding="19,14" Margin="6" HorizontalContentAlignment="Stretch" Height="150">
+              <Button.Template><ControlTemplate TargetType="Button">
+                <Border x:Name="tile" Background="{DynamicResource Card}" BorderBrush="{DynamicResource Line}" BorderThickness="1" CornerRadius="14" Padding="{TemplateBinding Padding}"><ContentPresenter/></Border>
+                <ControlTemplate.Triggers>
+                  <Trigger Property="IsMouseOver" Value="True"><Setter TargetName="tile" Property="Background" Value="{DynamicResource Hover}"/><Setter TargetName="tile" Property="BorderBrush" Value="{DynamicResource Accent}"/></Trigger>
+                  <Trigger Property="IsKeyboardFocused" Value="True"><Setter TargetName="tile" Property="BorderBrush" Value="{DynamicResource Accent}"/></Trigger>
+                </ControlTemplate.Triggers>
+              </ControlTemplate></Button.Template>
+              <Grid>
+                <Grid.RowDefinitions><RowDefinition Height="50"/><RowDefinition Height="*"/><RowDefinition Height="16"/></Grid.RowDefinitions>
+                <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="64"/></Grid.ColumnDefinitions>
+                <StackPanel>
+                  <TextBlock local:ThemeBrush.Key="{Binding Accent}" FontSize="10" FontWeight="SemiBold"><Run Text="{Binding Number, Mode=OneWay}"/><Run Text="  /  "/><Run Text="{Binding English, Mode=OneWay}"/></TextBlock>
+                  <TextBlock Text="{Binding Title}" Foreground="{DynamicResource Text}" FontSize="19" FontWeight="SemiBold" Margin="0,11,0,0"/>
+                </StackPanel>
+                <Border Grid.Column="1" Background="{DynamicResource Input}" Width="54" Height="54" CornerRadius="12" HorizontalAlignment="Right">
+                  <Path Data="{Binding Geometry}" Width="34" Height="34" Stretch="Uniform" local:ThemeBrush.Key="{Binding Accent}" StrokeThickness="1.4" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                </Border>
+                <TextBlock Grid.Row="1" Grid.ColumnSpan="2" Text="{Binding Description}" Foreground="{DynamicResource Muted}" TextWrapping="Wrap" FontSize="12" LineHeight="19" Margin="0,8,0,2"/>
+                <TextBlock Grid.Row="2" Text="打开模块" local:ThemeBrush.Key="{Binding Accent}" FontSize="11" VerticalAlignment="Bottom"/>
+                <TextBlock Grid.Row="2" Grid.Column="1" Text="↗" local:ThemeBrush.Key="{Binding Accent}" FontSize="17" HorizontalAlignment="Right" VerticalAlignment="Bottom"/>
+              </Grid>
+            </Button>
+          </DataTemplate></ItemsControl.ItemTemplate>
+        </ItemsControl>
+        <TextBlock Text="快速体验：PLC 调试 → 本机联调；设备模拟 → Modbus 主站。自启动与截图偏好请在「系统配置」中设置。" Foreground="{DynamicResource Muted}" FontSize="11" TextWrapping="Wrap" Margin="0,13,0,8"/>
+      </StackPanel>
+    </ScrollViewer>
+  </DataTemplate>
+</ResourceDictionary>

@@ -1,0 +1,40 @@
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" xmlns:local="clr-namespace:LinkLab.App">
+  <DataTemplate DataType="{x:Type local:QuickVm}">
+    <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" Padding="0,0,8,0"><StackPanel>
+      <Border Background="{DynamicResource Hero}" BorderBrush="{DynamicResource Line}" BorderThickness="1" CornerRadius="14" Padding="24" Margin="0,0,0,16"><Grid><Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="Auto" /></Grid.ColumnDefinitions><StackPanel><TextBlock Text="SYSTEM SETTINGS  /  系统配置" FontSize="22" FontWeight="SemiBold" /><TextBlock Text="管理启动方式，让截图工具随时待命。" Foreground="{DynamicResource Muted}" Margin="0,10,0,0" /></StackPanel><Button Grid.Column="1" Content="隐藏到托盘" Command="{Binding System.HideToTrayCommand}" IsEnabled="{Binding System.CanHideToTray}" VerticalAlignment="Center" Margin="16,0,0,0" /></Grid></Border>
+      <Border Style="{StaticResource CardBorder}" Margin="0,0,0,16"><StackPanel>
+        <TextBlock Text="启动与后台" Style="{StaticResource SectionTitle}" />
+        <CheckBox Content="开机自启动（后台运行）" IsChecked="{Binding System.AutoStart, UpdateSourceTrigger=PropertyChanged}" FontSize="15" />
+        <TextBlock Text="登录当前 Windows 账户后自动运行，只显示托盘图标，不弹出主窗口。" Foreground="{DynamicResource Muted}" TextWrapping="Wrap" Margin="24,8,0,8" />
+        <TextBlock Text="{Binding System.StartupStatus}" Foreground="{DynamicResource QuickAccent}" TextWrapping="Wrap" Margin="24,0,0,10" />
+        <WrapPanel Margin="24,0,0,18"><Button Content="刷新启动项" Command="{Binding System.RefreshCommand}" Padding="12,6"/><Button Content="更新为当前版本" Command="{Binding System.UpdateStartupCommand}" Visibility="{Binding System.DifferentVersion, Converter={StaticResource BoolVisibility}}" Margin="8,0,0,0" Padding="12,6"/></WrapPanel>
+        <Border Height="1" Background="{DynamicResource Line}" Margin="0,0,0,18"/>
+        <CheckBox Content="启动时默认启用截图功能" IsChecked="{Binding System.CaptureOnStartup, UpdateSourceTrigger=PropertyChanged}" FontSize="15" />
+        <TextBlock Text="下次手动启动或开机自启动时，自动开启 F1 截图 / F3 贴图。当前是否开启可在下方单独设置。" Foreground="{DynamicResource Muted}" TextWrapping="Wrap" Margin="24,8,0,0" LineHeight="20"/>
+        <Border Background="{DynamicResource Input}" CornerRadius="8" Padding="12" Margin="0,18,0,0"><TextBlock Text="设置立即保存，首次默认均关闭。双击托盘图标打开主界面，右键可切换截图或退出。隐藏到托盘会继续运行；点击窗口叉号会退出应用。" Foreground="{DynamicResource Muted}" TextWrapping="Wrap" FontSize="11" LineHeight="20"/></Border>
+      </StackPanel></Border>
+      <Grid Margin="0,2,0,16"><TextBlock Text="截图与文字识别" FontSize="18" FontWeight="SemiBold"/><CheckBox Content="当前启用截图快捷键" IsChecked="{Binding Enabled, UpdateSourceTrigger=PropertyChanged}" HorizontalAlignment="Right" VerticalAlignment="Center"/></Grid>
+      <UniformGrid Columns="3" Margin="0,0,0,16">
+        <Border Style="{StaticResource CardBorder}" Margin="0,0,10,0"><StackPanel><TextBlock Text="F1" FontSize="34" Foreground="{DynamicResource QuickAccent}" FontFamily="Consolas" /><TextBlock Text="区域截图与标注" FontSize="17" FontWeight="SemiBold" Margin="0,12,0,8" /><TextBlock Text="拖动选区内部移动、边角调整尺寸；滚轮 / ± 缩放画布，空格拖动平移。文字、矩形、正方形均可切色，Ctrl+Z 撤销。" Foreground="{DynamicResource Muted}" FontSize="12" TextWrapping="Wrap" LineHeight="21" /></StackPanel></Border>
+        <Border Style="{StaticResource CardBorder}" Margin="5,0,5,0"><StackPanel><TextBlock Text="F3" FontSize="34" Foreground="{DynamicResource NetworkAccent}" FontFamily="Consolas" /><TextBlock Text="悬浮贴图" FontSize="17" FontWeight="SemiBold" Margin="0,12,0,8" /><TextBlock Text="贴出选区或剪贴板图片。拖动移动，滚轮 / ± 缩放，100% 重置，Ctrl+滚轮调透明度。缩放不改变保存图片的分辨率。" Foreground="{DynamicResource Muted}" FontSize="12" TextWrapping="Wrap" LineHeight="21" /></StackPanel></Border>
+        <Border Style="{StaticResource CardBorder}" Margin="10,0,0,0"><StackPanel><TextBlock Text="Aa" FontSize="34" Foreground="{DynamicResource PlcAccent}" FontFamily="Consolas" /><TextBlock Text="文字识别" FontSize="17" FontWeight="SemiBold" Margin="0,12,0,8" /><TextBlock Text="选区工具栏点击「文字识别」。中英文离线提取，优先识别标注前原图；复制、保存与贴图保留标注。" Foreground="{DynamicResource Muted}" FontSize="12" TextWrapping="Wrap" LineHeight="21" /></StackPanel></Border>
+      </UniformGrid>
+      <Border Style="{StaticResource CardBorder}" Margin="0,0,0,16"><StackPanel>
+        <WrapPanel><Button Content="开始截图  F1" Command="{Binding CaptureCommand}" IsEnabled="{Binding CanCapture}" Style="{StaticResource PrimaryButton}" /><Button Content="贴图  F3" Command="{Binding PinCommand}" IsEnabled="{Binding Enabled}" Margin="10,0,0,0" /><Button Content="打开图片" Command="{Binding OpenImageCommand}" Margin="10,0,0,0" /><Button Content="关闭所有浮窗" Command="{Binding ClosePinsCommand}" Margin="10,0,0,0" /></WrapPanel>
+        <TextBlock Text="{Binding Status}" Foreground="{DynamicResource QuickAccent}" TextWrapping="Wrap" Margin="0,15,0,10" />
+        <TextBlock Text="开启时才占用 F1 / F3，热键冲突会提示。最小化主窗口后仍可截图；退出或关闭开关会释放热键并关闭浮窗。" Foreground="{DynamicResource Muted}" FontSize="11" TextWrapping="Wrap" />
+      </StackPanel></Border>
+      <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="16" /><ColumnDefinition Width="*" /></Grid.ColumnDefinitions>
+        <Border Style="{StaticResource CardBorder}"><StackPanel><DockPanel Margin="0,0,0,14"><TextBlock Text="最近截图" FontSize="17" FontWeight="SemiBold" /><TextBlock Text="{Binding ImageSize}" HorizontalAlignment="Right" Foreground="{DynamicResource Muted}" FontSize="11" VerticalAlignment="Center" /></DockPanel>
+          <Border Background="{DynamicResource Input}" CornerRadius="8" Height="245" Padding="10"><Image Source="{Binding LastImage}" Stretch="Uniform" /></Border>
+          <WrapPanel Margin="0,14,0,0"><Button Content="复制图片" Command="{Binding CopyCommand}" IsEnabled="{Binding HasImage}" /><Button Content="保存 PNG" Command="{Binding SaveCommand}" IsEnabled="{Binding HasImage}" Margin="10,0,0,0" /></WrapPanel>
+          <TextBlock Text="双击文字可修改内容；选中已有标注可移动、切色或删除。图片仅保留在本次运行中，主动保存才写入文件。" Foreground="{DynamicResource Muted}" FontSize="11" TextWrapping="Wrap" Margin="0,12,0,0" />
+        </StackPanel></Border>
+        <Border Grid.Column="2" Style="{StaticResource CardBorder}"><StackPanel><TextBlock Text="提取文字" Style="{StaticResource SectionTitle}" /><WrapPanel Margin="0,0,0,12"><ComboBox ItemsSource="{Binding Languages}" SelectedIndex="{Binding Language}" Width="195" /><Button Content="识别文字" Command="{Binding OcrCommand}" IsEnabled="{Binding CanOcr}" Margin="10,0,0,0" /></WrapPanel>
+          <TextBox Text="{Binding OcrText, UpdateSourceTrigger=PropertyChanged}" AcceptsReturn="True" TextWrapping="Wrap" VerticalContentAlignment="Top" VerticalScrollBarVisibility="Auto" Height="205" />
+          <Button Content="复制文字" Command="{Binding CopyTextCommand}" HorizontalAlignment="Left" Margin="0,14,0,0" /><TextBlock Text="Tesseract 本地识别 · 不上传图片 · 复杂排版请核对" Foreground="{DynamicResource Muted}" FontSize="11" TextWrapping="Wrap" Margin="0,12,0,0" />
+        </StackPanel></Border>
+      </Grid>
+    </StackPanel></ScrollViewer>
+  </DataTemplate>
+</ResourceDictionary>

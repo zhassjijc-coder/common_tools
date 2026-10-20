@@ -1,0 +1,72 @@
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" xmlns:local="clr-namespace:LinkLab.App">
+  <Style TargetType="PasswordBox"><Setter Property="Background" Value="{DynamicResource Input}" /><Setter Property="Foreground" Value="{DynamicResource Text}" /><Setter Property="BorderBrush" Value="{DynamicResource Line}" /><Setter Property="Padding" Value="10,9" /><Setter Property="FontSize" Value="13" /></Style>
+  <DataTemplate DataType="{x:Type local:MqttVm}">
+    <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" Padding="0,0,8,0">
+      <StackPanel>
+        <Border Background="{DynamicResource Hero}" BorderBrush="{DynamicResource Line}" BorderThickness="1" CornerRadius="14" Padding="22" Margin="0,0,0,16">
+          <DockPanel><StackPanel><TextBlock Text="MQTT  /  让消息流动起来" FontSize="22" FontWeight="SemiBold" /><TextBlock Text="连接 Broker，订阅设备，发布你的下一条消息。" Foreground="{DynamicResource Muted}" Margin="0,9,0,0" /></StackPanel><StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center"><Button Content="保存模板" Command="{Binding SaveProfileCommand}" /><Button Content="载入模板" Command="{Binding LoadProfileCommand}" IsEnabled="{Binding CanConfigure}" Margin="10,0,0,0" /></StackPanel></DockPanel>
+        </Border>
+        <Border Style="{StaticResource CardBorder}" Margin="0,0,0,16"><StackPanel>
+          <TextBlock Text="连接配置" Style="{StaticResource SectionTitle}" />
+          <StackPanel IsEnabled="{Binding CanConfigure}">
+            <WrapPanel>
+              <StackPanel Width="170" Margin="0,0,14,14"><TextBlock Text="传输" Style="{StaticResource Caption}" /><ComboBox ItemsSource="{Binding Transports}" SelectedIndex="{Binding Transport}" /></StackPanel>
+              <StackPanel Width="280" Margin="0,0,14,14"><TextBlock Text="主机 / 完整 WebSocket URL" Style="{StaticResource Caption}" /><TextBox Text="{Binding Host, UpdateSourceTrigger=PropertyChanged}" /></StackPanel>
+              <StackPanel Width="85" Margin="0,0,14,14"><TextBlock Text="TCP 端口" Style="{StaticResource Caption}" /><TextBox Text="{Binding Port, UpdateSourceTrigger=PropertyChanged}" /></StackPanel>
+              <StackPanel Width="150" Margin="0,0,0,14"><TextBlock Text="协议版本" Style="{StaticResource Caption}" /><ComboBox ItemsSource="{Binding Versions}" SelectedIndex="{Binding Version}" /></StackPanel>
+            </WrapPanel>
+            <WrapPanel>
+              <StackPanel Width="230" Margin="0,0,14,14"><TextBlock Text="Client ID（每个客户端唯一）" Style="{StaticResource Caption}" /><TextBox Text="{Binding ClientId, UpdateSourceTrigger=PropertyChanged}" /></StackPanel>
+              <StackPanel Width="180" Margin="0,0,14,14"><TextBlock Text="用户名" Style="{StaticResource Caption}" /><TextBox Text="{Binding Username, UpdateSourceTrigger=PropertyChanged}" /></StackPanel>
+              <StackPanel Width="180" Margin="0,0,14,14"><TextBlock Text="密码（不保存）" Style="{StaticResource Caption}" /><PasswordBox local:PasswordBinding.Value="{Binding Password, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" /></StackPanel>
+            </WrapPanel>
+            <Expander Header="会话、TLS 证书与遗嘱" Foreground="{DynamicResource Text}" Margin="0,0,0,14">
+              <StackPanel Margin="0,14,0,0">
+                <WrapPanel>
+                  <StackPanel Width="120" Margin="0,0,14,14"><TextBlock Text="Keep Alive / 秒" Style="{StaticResource Caption}" /><TextBox Text="{Binding KeepAlive, UpdateSourceTrigger=PropertyChanged}" /></StackPanel>
+                  <StackPanel Width="120" Margin="0,0,14,14"><TextBlock Text="超时 / ms" Style="{StaticResource Caption}" /><TextBox Text="{Binding Timeout, UpdateSourceTrigger=PropertyChanged}" /></StackPanel>
+                  <StackPanel Width="160" Margin="0,0,14,14"><TextBlock Text="MQTT 5 会话过期 / 秒" Style="{StaticResource Caption}" /><TextBox Text="{Binding SessionExpiry, UpdateSourceTrigger=PropertyChanged}" /></StackPanel>
+                  <CheckBox Content="Clean Session / Start" IsChecked="{Binding CleanSession}" VerticalAlignment="Center" />
+                </WrapPanel>
+                <TextBlock Text="TLS 校验服务端证书与主机名；CA 留空使用系统信任。WS/WSS 的端口与路径写在 URL 内。" Foreground="{DynamicResource Muted}" FontSize="11" TextWrapping="Wrap" Margin="0,0,0,12" />
+                <DockPanel Margin="0,0,0,12"><Button DockPanel.Dock="Right" Content="CA 证书" Command="{Binding CaCommand}" Margin="12,0,0,0" /><TextBox Text="{Binding CaFile, UpdateSourceTrigger=PropertyChanged}" ToolTip="可选 PEM 根证书路径" /></DockPanel>
+                <DockPanel Margin="0,0,0,12"><Button DockPanel.Dock="Right" Content="客户端 PFX" Command="{Binding CertificateCommand}" Margin="12,0,0,0" /><PasswordBox DockPanel.Dock="Right" Width="160" Margin="12,0,0,0" ToolTip="PFX 密码，不保存" local:PasswordBinding.Value="{Binding CertificatePassword, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" /><TextBox Text="{Binding ClientCertificate, UpdateSourceTrigger=PropertyChanged}" ToolTip="可选双向 TLS 客户端证书" /></DockPanel>
+                <WrapPanel>
+                  <StackPanel Width="260" Margin="0,0,14,12"><TextBlock Text="遗嘱主题（留空关闭）" Style="{StaticResource Caption}" /><TextBox Text="{Binding WillTopic, UpdateSourceTrigger=PropertyChanged}" /></StackPanel>
+                  <StackPanel Width="210" Margin="0,0,14,12"><TextBlock Text="遗嘱内容 / UTF-8" Style="{StaticResource Caption}" /><TextBox Text="{Binding WillPayload, UpdateSourceTrigger=PropertyChanged}" /></StackPanel>
+                  <StackPanel Width="80" Margin="0,0,14,12"><TextBlock Text="QoS" Style="{StaticResource Caption}" /><ComboBox ItemsSource="{Binding QosOptions}" SelectedItem="{Binding WillQos}" /></StackPanel>
+                  <CheckBox Content="遗嘱 Retain" IsChecked="{Binding WillRetain}" VerticalAlignment="Center" />
+                </WrapPanel>
+              </StackPanel>
+            </Expander>
+          </StackPanel>
+          <WrapPanel><Button Content="{Binding ConnectText}" Command="{Binding ConnectCommand}" Style="{StaticResource PrimaryButton}" /><Button Content="取消 / 断开" Command="{Binding DisconnectCommand}" Margin="10,0,0,0" /><CheckBox Content="断线自动重连并恢复订阅" IsChecked="{Binding AutoReconnect}" Margin="20,0,0,0" VerticalAlignment="Center" /></WrapPanel>
+          <TextBlock Text="{Binding Status}" Foreground="{DynamicResource MqttAccent}" TextWrapping="Wrap" Margin="0,14,0,0" />
+        </StackPanel></Border>
+        <Grid Margin="0,0,0,16"><Grid.ColumnDefinitions><ColumnDefinition Width="0.9*" /><ColumnDefinition Width="16" /><ColumnDefinition Width="1.1*" /></Grid.ColumnDefinitions>
+          <Border Style="{StaticResource CardBorder}"><StackPanel>
+            <TextBlock Text="订阅" Style="{StaticResource SectionTitle}" /><TextBlock Text="支持 + / # 通配符，例如 devices/+/status" Foreground="{DynamicResource Muted}" FontSize="11" TextWrapping="Wrap" Margin="0,0,0,12" />
+            <TextBox Text="{Binding SubscribeTopic, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,12" />
+            <WrapPanel Margin="0,0,0,14"><ComboBox ItemsSource="{Binding QosOptions}" SelectedItem="{Binding SubscribeQos}" Width="70" ToolTip="订阅 QoS" /><Button Content="订阅" Command="{Binding SubscribeCommand}" IsEnabled="{Binding Connected}" Margin="10,0,0,0" /><Button Content="取消选中" Command="{Binding UnsubscribeCommand}" IsEnabled="{Binding Connected}" Margin="10,0,0,0" /></WrapPanel>
+            <DataGrid ItemsSource="{Binding Subscriptions}" SelectedItem="{Binding SelectedSubscription}" Height="180" IsReadOnly="True"><DataGrid.Columns><DataGridTextColumn Header="主题过滤器" Binding="{Binding Topic}" Width="*" /><DataGridTextColumn Header="QoS" Binding="{Binding Qos}" Width="50" /></DataGrid.Columns></DataGrid>
+          </StackPanel></Border>
+          <Border Grid.Column="2" Style="{StaticResource CardBorder}"><StackPanel>
+            <TextBlock Text="发布" Style="{StaticResource SectionTitle}" /><TextBlock Text="主题" Style="{StaticResource Caption}" /><TextBox Text="{Binding PublishTopic, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,12" />
+            <WrapPanel Margin="0,0,0,12"><ComboBox ItemsSource="{Binding Formats}" SelectedItem="{Binding PayloadFormat}" Width="100" /><ComboBox ItemsSource="{Binding QosOptions}" SelectedItem="{Binding PublishQos}" Width="65" Margin="10,0,0,0" ToolTip="发布 QoS" /><CheckBox Content="Retain" IsChecked="{Binding Retain}" VerticalAlignment="Center" Margin="14,0,0,0" /><Button Content="格式化" Command="{Binding FormatCommand}" Margin="6,0,0,0" /></WrapPanel>
+            <TextBox Text="{Binding Payload, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource CodeBox}" Height="136" Margin="0,0,0,12" />
+            <Button Content="发布消息  ↗" Command="{Binding PublishCommand}" Style="{StaticResource PrimaryButton}" IsEnabled="{Binding Connected}" HorizontalAlignment="Left" />
+            <TextBlock Text="Text / HEX 空负载 + Retain 可清除保留消息。" Foreground="{DynamicResource Muted}" FontSize="11" Margin="0,10,0,0" TextWrapping="Wrap" />
+          </StackPanel></Border>
+        </Grid>
+        <Border Style="{StaticResource CardBorder}"><StackPanel>
+          <DockPanel Margin="0,0,0,14"><TextBlock Text="消息时间线" Style="{StaticResource SectionTitle}" /><TextBlock Text="{Binding CountText}" HorizontalAlignment="Right" Foreground="{DynamicResource Muted}" FontSize="11" VerticalAlignment="Center" /></DockPanel>
+          <WrapPanel Margin="0,0,0,14"><TextBox Text="{Binding Filter, UpdateSourceTrigger=PropertyChanged}" Width="240" ToolTip="过滤主题或内容" /><ComboBox ItemsSource="{Binding Directions}" SelectedItem="{Binding Direction}" Width="90" Margin="10,0,0,0" /><Button Content="导出筛选结果" Command="{Binding ExportCommand}" Margin="10,0,0,0" /><Button Content="清空" Command="{Binding ClearCommand}" Margin="10,0,0,0" /></WrapPanel>
+          <DataGrid ItemsSource="{Binding MessageView}" SelectedItem="{Binding Selected}" Height="235" IsReadOnly="True" local:AutoScroll.Enabled="True"><DataGrid.Columns><DataGridTextColumn Header="时间" Binding="{Binding TimeText}" Width="115" /><DataGridTextColumn Header="方向" Binding="{Binding Direction}" Width="55" /><DataGridTextColumn Header="主题" Binding="{Binding Topic}" Width="*" /><DataGridTextColumn Header="QoS / Retain" Binding="{Binding Flags}" Width="185" /><DataGridTextColumn Header="字节" Binding="{Binding OriginalLength}" Width="65" /></DataGrid.Columns></DataGrid>
+          <DockPanel Margin="0,14,0,10"><TextBlock Text="消息详情" VerticalAlignment="Center" /><ComboBox ItemsSource="{Binding Formats}" SelectedItem="{Binding Display}" Width="120" HorizontalAlignment="Right" /></DockPanel>
+          <TextBox Text="{Binding Detail, Mode=OneWay}" Style="{StaticResource CodeBox}" IsReadOnly="True" Height="170" />
+          <TextBlock Text="这里记录 MQTT 应用消息负载；全局监视同步显示负载 HEX，不包含 CONNECT 凭据。" Foreground="{DynamicResource Muted}" FontSize="11" Margin="0,12,0,0" TextWrapping="Wrap" />
+        </StackPanel></Border>
+      </StackPanel>
+    </ScrollViewer>
+  </DataTemplate>
+</ResourceDictionary>

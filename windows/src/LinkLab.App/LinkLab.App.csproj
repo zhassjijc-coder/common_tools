@@ -1,0 +1,17 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net10.0-windows</TargetFramework>
+    <UseWPF>true</UseWPF>
+    <UseWindowsForms>true</UseWindowsForms>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <AssemblyName>LinkLab</AssemblyName>
+    <RootNamespace>LinkLab.App</RootNamespace>
+    <Version>1.0</Version>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+    <ApplicationIcon>Assets/LinkLab.ico</ApplicationIcon>
+  </PropertyGroup>
+  <ItemGroup><ProjectReference Include="../LinkLab.Core/LinkLab.Core.csproj" /></ItemGroup>
+  <ItemGroup><PackageReference Include="Tesseract" Version="5.2.0" /></ItemGroup>
+  <ItemGroup><Content Include="Assets/tessdata/*" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" Link="tessdata/%(Filename)%(Extension)" /></ItemGroup>
+</Project>

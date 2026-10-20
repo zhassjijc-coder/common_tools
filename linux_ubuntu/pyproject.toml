@@ -1,0 +1,25 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "linklab-qt"
+version = "1.0"
+description = "LinkLab desktop communication workbench for Ubuntu and Windows"
+readme = "README.en.md"
+requires-python = ">=3.10,<3.14"
+dependencies = [
+  "PySide6==6.8.3",
+  "pyserial==3.5",
+  "paho-mqtt==2.1.0",
+  "python-xlib==0.33; sys_platform == 'linux'",
+]
+
+[project.gui-scripts]
+linklab = "linklab.__main__:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+linklab = ["assets/*"]

@@ -1,0 +1,537 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" xmlns:local="clr-namespace:LinkLab.App">
+  <DataTemplate x:Key="SerialConfig">
+    <StackPanel>
+      <WrapPanel>
+        <StackPanel Width="160" Margin="0,0,14,14">
+          <TextBlock Text="COM 端口" Style="{StaticResource Caption}" />
+          <ComboBox ItemsSource="{Binding Ports}" Text="{Binding Port, UpdateSourceTrigger=PropertyChanged}" IsEditable="True" />
+        </StackPanel>
+        <StackPanel Width="120" Margin="0,0,14,14">
+          <TextBlock Text="波特率" Style="{StaticResource Caption}" />
+          <TextBox Text="{Binding Baud, UpdateSourceTrigger=PropertyChanged}" />
+        </StackPanel>
+        <StackPanel Width="90" Margin="0,0,14,14">
+          <TextBlock Text="数据位" Style="{StaticResource Caption}" />
+          <ComboBox ItemsSource="{Binding BitOptions}" SelectedItem="{Binding Bits, UpdateSourceTrigger=PropertyChanged}" />
+        </StackPanel>
+        <StackPanel Width="130" Margin="0,0,14,14">
+          <TextBlock Text="奇偶校验" Style="{StaticResource Caption}" />
+          <ComboBox ItemsSource="{Binding ParityOptions}" SelectedItem="{Binding Parity, UpdateSourceTrigger=PropertyChanged}" />
+        </StackPanel>
+        <StackPanel Width="120" Margin="0,0,14,14">
+          <TextBlock Text="停止位" Style="{StaticResource Caption}" />
+          <ComboBox ItemsSource="{Binding StopOptions}" SelectedItem="{Binding Stop, UpdateSourceTrigger=PropertyChanged}" />
+        </StackPanel>
+      </WrapPanel>
+      <WrapPanel>
+        <CheckBox Content="RTS" IsChecked="{Binding Rts}" />
+        <CheckBox Content="DTR" IsChecked="{Binding Dtr}" />
+        <Button Content="刷新串口" Command="{Binding RefreshCommand}" Margin="0,0,10,0" />
+        <TextBlock Text="无可用端口时，可直接输入 COM 名称" Foreground="{DynamicResource Muted}" FontSize="11" VerticalAlignment="Center" />
+      </WrapPanel>
+    </StackPanel>
+  </DataTemplate>
+  <DataTemplate x:Key="QueryConfig">
+    <StackPanel>
+      <WrapPanel>
+        <StackPanel Width="100" Margin="0,0,14,14">
+          <TextBlock Text="站号 / Unit ID" Style="{StaticResource Caption}" />
+          <TextBox Text="{Binding Unit, UpdateSourceTrigger=PropertyChanged}" />
+        </StackPanel>
+        <StackPanel Width="230" Margin="0,0,14,14">
+          <TextBlock Text="功能码" Style="{StaticResource Caption}" />
+          <ComboBox ItemsSource="{Binding Functions}" SelectedIndex="{Binding FunctionIndex, UpdateSourceTrigger=PropertyChanged}" />
+        </StackPanel>
+        <StackPanel Width="340" Margin="0,0,14,14">
+          <TextBlock Text="地址表示方式" Style="{StaticResource Caption}" />
+          <ComboBox ItemsSource="{Binding AddressModes}" SelectedIndex="{Binding AddressMode, UpdateSourceTrigger=PropertyChanged}" />
+        </StackPanel>
+      </WrapPanel>
+      <WrapPanel>
+        <StackPanel Width="160" Margin="0,0,14,14">
+          <TextBlock Text="起始地址" Style="{StaticResource Caption}" />
+          <TextBox Text="{Binding Address, UpdateSourceTrigger=PropertyChanged}" />
+        </StackPanel>
+        <StackPanel Width="110" Margin="0,0,14,14">
+          <TextBlock Text="数量" Style="{StaticResource Caption}" />
+          <TextBox Text="{Binding Quantity, UpdateSourceTrigger=PropertyChanged}" />
+        </StackPanel>
+        <StackPanel Margin="0,24,0,0">
+          <TextBlock Text="{Binding ActualAddress}" Foreground="{DynamicResource Accent}" FontSize="12" />
+          <TextBlock Text="支持十进制或 0x 十六进制输入" Foreground="{DynamicResource Muted}" FontSize="11" Margin="0,5,0,0" />
+        </StackPanel>
+      </WrapPanel>
+      <StackPanel Visibility="{Binding IsWrite, Converter={StaticResource BoolVisibility}}">
+        <TextBlock Text="写入值（空格或逗号分隔；线圈为 0 / 1；个数与数量一致）" Style="{StaticResource Caption}" />
+        <TextBox Text="{Binding Values, UpdateSourceTrigger=PropertyChanged}" FontFamily="Consolas" Margin="0,0,0,14" />
+      </StackPanel>
+    </StackPanel>
+  </DataTemplate>
+  <DataTemplate x:Key="Sender">
+    <Grid>
+      <Grid.ColumnDefinitions>
+        <ColumnDefinition Width="*" />
+        <ColumnDefinition Width="190" />
+      </Grid.ColumnDefinitions>
+      <StackPanel Margin="0,0,18,0">
+        <WrapPanel>
+          <StackPanel Width="130" Margin="0,0,14,14">
+            <TextBlock Text="输入格式" Style="{StaticResource Caption}" />
+            <ComboBox ItemsSource="{Binding Formats}" SelectedItem="{Binding Format, UpdateSourceTrigger=PropertyChanged}" />
+          </StackPanel>
+          <StackPanel Width="190" Margin="0,0,14,14">
+            <TextBlock Text="追加校验" Style="{StaticResource Caption}" />
+            <ComboBox ItemsSource="{Binding Checksums}" SelectedItem="{Binding Checksum, UpdateSourceTrigger=PropertyChanged}" />
+          </StackPanel>
+          <CheckBox Content="追加 CR LF（校验前）" IsChecked="{Binding CrLf}" Margin="0,25,0,0" />
+        </WrapPanel>
+        <TextBox Text="{Binding Payload, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource CodeBox}" Height="100" ToolTip="HEX 可带空格、0x 前缀；文本按所选编码发送" />
+      </StackPanel>
+      <StackPanel Grid.Column="1" Margin="0,0,0,0">
+        <TextBlock Text="发送控制" Style="{StaticResource Caption}" />
+        <Button Content="发送报文  ↗" Command="{Binding SendCommand}" Style="{StaticResource PrimaryButton}" Margin="0,0,10,0" />
+        <TextBlock Text="间隔 / ms" Style="{StaticResource Caption}" Margin="0,15,0,7" />
+        <TextBox Text="{Binding Interval, UpdateSourceTrigger=PropertyChanged}" />
+        <Button Content="{Binding PeriodicText}" Command="{Binding PeriodicCommand}" Margin="0,10,10,0" Padding="8,9" />
+      </StackPanel>
+    </Grid>
+  </DataTemplate>
+  <DataTemplate x:Key="LogPanel">
+    <Border Style="{StaticResource CardBorder}" Padding="0" Margin="0,0,0,16">
+      <StackPanel>
+        <DockPanel Margin="18,15,18,10">
+          <TextBlock Text="收发记录" FontWeight="SemiBold" />
+          <TextBlock Text="全局实时记录 · 最近 2000 条 · 详细筛选请前往监视与工具" HorizontalAlignment="Right" FontSize="11" Foreground="{DynamicResource Muted}" />
+        </DockPanel>
+        <DataGrid ItemsSource="{Binding Logs}" IsReadOnly="True" Height="184" local:AutoScroll.Enabled="True">
+          <DataGrid.Columns>
+            <DataGridTextColumn Header="时间" Binding="{Binding Time}" Width="116" />
+            <DataGridTemplateColumn Header="方向" Width="60">
+              <DataGridTemplateColumn.CellTemplate>
+                <DataTemplate>
+                  <TextBlock Text="{Binding Direction}" local:ThemeBrush.Key="{Binding Color}" FontFamily="Consolas" FontWeight="Bold" />
+                </DataTemplate>
+              </DataGridTemplateColumn.CellTemplate>
+            </DataGridTemplateColumn>
+            <DataGridTextColumn Header="模块" Binding="{Binding Source}" Width="130" />
+            <DataGridTextColumn Header="字节" Binding="{Binding Length}" Width="55" />
+            <DataGridTemplateColumn Header="HEX / 状态" Width="*">
+              <DataGridTemplateColumn.CellTemplate>
+                <DataTemplate>
+                  <TextBlock FontFamily="Consolas" TextTrimming="CharacterEllipsis" ToolTip="{Binding Hex}">
+                    <Run Text="{Binding Hex, Mode=OneWay}" />
+                    <Run Text="  " />
+                    <Run Text="{Binding Note, Mode=OneWay}" />
+                  </TextBlock>
+                </DataTemplate>
+              </DataGridTemplateColumn.CellTemplate>
+            </DataGridTemplateColumn>
+          </DataGrid.Columns>
+        </DataGrid>
+      </StackPanel>
+    </Border>
+  </DataTemplate>
+  <DataTemplate DataType="{x:Type local:SerialVm}">
+    <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" Padding="0,0,8,0">
+      <StackPanel>
+        <Border Style="{StaticResource CardBorder}" Margin="0,0,0,16">
+          <StackPanel>
+            <TextBlock Text="连接参数" Style="{StaticResource SectionTitle}" />
+            <StackPanel IsEnabled="{Binding CanConfigure}">
+              <ContentControl Content="{Binding Config}" ContentTemplate="{StaticResource SerialConfig}" />
+            </StackPanel>
+            <StackPanel Orientation="Horizontal" Margin="0,20,0,0">
+              <Button Content="{Binding ConnectText}" Command="{Binding ConnectCommand}" Style="{StaticResource PrimaryButton}" />
+              <TextBlock Text="{Binding Status}" VerticalAlignment="Center" Margin="18,0,0,0" Foreground="{DynamicResource Muted}" />
+            </StackPanel>
+          </StackPanel>
+        </Border>
+        <Border Style="{StaticResource CardBorder}" Margin="0,0,0,16">
+          <StackPanel>
+            <TextBlock Text="发送工作区" Style="{StaticResource SectionTitle}" />
+            <ContentControl Content="{Binding Sender}" ContentTemplate="{StaticResource Sender}" />
+          </StackPanel>
+        </Border>
+        <ContentControl Content="{Binding Hub}" ContentTemplate="{StaticResource LogPanel}" />
+        <TextBlock Text="RS485 通过 USB 转串口适配器接入；同一个 COM 口只能由一个模块打开。收发记录中的串口数据为到达片段。" Foreground="{DynamicResource Muted}" FontSize="11" TextWrapping="Wrap" />
+      </StackPanel>
+    </ScrollViewer>
+  </DataTemplate>
+  <DataTemplate DataType="{x:Type local:NetworkVm}">
+    <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" Padding="0,0,8,0">
+      <StackPanel>
+        <Border Style="{StaticResource CardBorder}" Margin="0,0,0,16">
+          <StackPanel>
+            <TextBlock Text="网络会话" Style="{StaticResource SectionTitle}" />
+            <StackPanel IsEnabled="{Binding CanConfigure}">
+              <WrapPanel>
+                <StackPanel Width="200" Margin="0,0,14,14">
+                  <TextBlock Text="工作模式" Style="{StaticResource Caption}" />
+                  <ComboBox ItemsSource="{Binding Modes}" SelectedIndex="{Binding Mode, UpdateSourceTrigger=PropertyChanged}" />
+                </StackPanel>
+              </WrapPanel>
+              <WrapPanel Visibility="{Binding IsClient, Converter={StaticResource BoolVisibility}}">
+                <StackPanel Width="250" Margin="0,0,14,14">
+                  <TextBlock Text="目标主机 / IP" Style="{StaticResource Caption}" />
+                  <TextBox Text="{Binding Host, UpdateSourceTrigger=PropertyChanged}" />
+                </StackPanel>
+                <StackPanel Width="120" Margin="0,0,14,14">
+                  <TextBlock Text="目标端口" Style="{StaticResource Caption}" />
+                  <TextBox Text="{Binding Port, UpdateSourceTrigger=PropertyChanged}" />
+                </StackPanel>
+              </WrapPanel>
+              <WrapPanel Visibility="{Binding IsServer, Converter={StaticResource BoolVisibility}}">
+                <StackPanel Width="250" Margin="0,0,14,14">
+                  <TextBlock Text="本地监听 IP" Style="{StaticResource Caption}" />
+                  <TextBox Text="{Binding BindHost, UpdateSourceTrigger=PropertyChanged}" />
+                </StackPanel>
+                <StackPanel Width="160" Margin="0,0,14,14">
+                  <TextBlock Text="本地端口（0 = 自动）" Style="{StaticResource Caption}" />
+                  <TextBox Text="{Binding BindPort, UpdateSourceTrigger=PropertyChanged}" />
+                </StackPanel>
+              </WrapPanel>
+            </StackPanel>
+            <StackPanel Orientation="Horizontal">
+              <Button Content="{Binding ConnectText}" Command="{Binding ConnectCommand}" Style="{StaticResource PrimaryButton}" />
+              <TextBlock Text="{Binding Status}" Margin="18,0,0,0" VerticalAlignment="Center" Foreground="{DynamicResource Muted}" />
+            </StackPanel>
+            <TextBlock Text="UDP 无连接握手：目标地址用于发送，监听地址用于接收。局域网设备接入时，将监听 IP 改为 0.0.0.0。" FontSize="11" Foreground="{DynamicResource Muted}" Margin="0,14,0,0" TextWrapping="Wrap" />
+          </StackPanel>
+        </Border>
+        <Border Style="{StaticResource CardBorder}" Margin="0,0,0,16">
+          <StackPanel>
+            <TextBlock Text="客户端与自动回复" Style="{StaticResource SectionTitle}" />
+            <WrapPanel>
+              <StackPanel Width="240" Margin="0,0,14,14">
+                <TextBlock Text="TCP 发送目标" Style="{StaticResource Caption}" />
+                <ComboBox ItemsSource="{Binding Peers}" SelectedItem="{Binding SelectedPeer, UpdateSourceTrigger=PropertyChanged}" />
+              </StackPanel>
+              <StackPanel Width="170" Margin="0,0,14,14">
+                <TextBlock Text="回复方式" Style="{StaticResource Caption}" />
+                <ComboBox ItemsSource="{Binding Replies}" SelectedIndex="{Binding ReplyMode, UpdateSourceTrigger=PropertyChanged}" />
+              </StackPanel>
+              <StackPanel Width="250" Margin="0,0,14,14">
+                <TextBlock Text="固定回复内容 / HEX" Style="{StaticResource Caption}" />
+                <TextBox Text="{Binding ReplyHex, UpdateSourceTrigger=PropertyChanged}" />
+              </StackPanel>
+            </WrapPanel>
+            <TextBlock Text="自动回复按每次收到的片段触发；TCP 没有报文边界，完整 Modbus 帧请使用设备模拟模块。" Foreground="{DynamicResource Muted}" FontSize="11" TextWrapping="Wrap" />
+          </StackPanel>
+        </Border>
+        <Border Style="{StaticResource CardBorder}" Margin="0,0,0,16">
+          <StackPanel>
+            <TextBlock Text="发送工作区" Style="{StaticResource SectionTitle}" />
+            <ContentControl Content="{Binding Sender}" ContentTemplate="{StaticResource Sender}" />
+          </StackPanel>
+        </Border>
+        <ContentControl Content="{Binding Hub}" ContentTemplate="{StaticResource LogPanel}" />
+      </StackPanel>
+    </ScrollViewer>
+  </DataTemplate>
+  <DataTemplate DataType="{x:Type local:MasterVm}">
+    <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" Padding="0,0,8,0">
+      <StackPanel>
+        <Border Style="{StaticResource CardBorder}" Margin="0,0,0,16">
+          <StackPanel>
+            <TextBlock Text="目标设备" Style="{StaticResource SectionTitle}" />
+            <StackPanel IsEnabled="{Binding CanConfigure}">
+              <WrapPanel>
+                <StackPanel Width="220" Margin="0,0,14,14">
+                  <TextBlock Text="通信方式" Style="{StaticResource Caption}" />
+                  <ComboBox ItemsSource="{Binding Modes}" SelectedIndex="{Binding Mode, UpdateSourceTrigger=PropertyChanged}" />
+                </StackPanel>
+                <StackPanel Width="120" Margin="0,0,14,14">
+                  <TextBlock Text="超时 / ms" Style="{StaticResource Caption}" />
+                  <TextBox Text="{Binding Timeout, UpdateSourceTrigger=PropertyChanged}" />
+                </StackPanel>
+                <StackPanel Width="150" Margin="0,0,14,14">
+                  <TextBlock Text="轮询间隔 / ms" Style="{StaticResource Caption}" />
+                  <TextBox Text="{Binding Interval, UpdateSourceTrigger=PropertyChanged}" />
+                </StackPanel>
+                <StackPanel Width="250" Margin="0,0,14,14" Visibility="{Binding IsTcp, Converter={StaticResource BoolVisibility}}">
+                  <TextBlock Text="目标主机" Style="{StaticResource Caption}" />
+                  <TextBox Text="{Binding Host, UpdateSourceTrigger=PropertyChanged}" />
+                </StackPanel>
+                <StackPanel Width="120" Margin="0,0,14,14" Visibility="{Binding IsTcp, Converter={StaticResource BoolVisibility}}">
+                  <TextBlock Text="端口" Style="{StaticResource Caption}" />
+                  <TextBox Text="{Binding Port, UpdateSourceTrigger=PropertyChanged}" />
+                </StackPanel>
+              </WrapPanel>
+              <ContentControl Content="{Binding Serial}" ContentTemplate="{StaticResource SerialConfig}" Visibility="{Binding IsRtu, Converter={StaticResource BoolVisibility}}" />
+            </StackPanel>
+          </StackPanel>
+        </Border>
+        <Border Style="{StaticResource CardBorder}" Margin="0,0,0,16">
+          <StackPanel>
+            <TextBlock Text="读写请求" Style="{StaticResource SectionTitle}" />
+            <StackPanel IsEnabled="{Binding CanConfigure}">
+              <ContentControl Content="{Binding Query}" ContentTemplate="{StaticResource QueryConfig}" />
+            </StackPanel>
+            <WrapPanel>
+              <Button Content="执行一次  ↗" Command="{Binding ExecuteCommand}" Style="{StaticResource PrimaryButton}" Margin="0,0,10,0" />
+              <Button Content="{Binding PollText}" Command="{Binding PollCommand}" Margin="0,0,10,0" />
+              <Button Content="停止 / 释放连接" Command="{Binding DisconnectCommand}" Margin="0,0,10,0" />
+            </WrapPanel>
+            <TextBlock Text="{Binding Status}" Foreground="{DynamicResource Accent}" FontSize="12" TextWrapping="Wrap" Margin="0,12,0,0" />
+          </StackPanel>
+        </Border>
+        <Border Style="{StaticResource CardBorder}" Margin="0,0,0,16">
+          <StackPanel>
+            <TextBlock Text="数据视图" Style="{StaticResource SectionTitle}" />
+            <WrapPanel>
+              <StackPanel Width="170" Margin="0,0,14,14">
+                <TextBlock Text="数值解释" Style="{StaticResource Caption}" />
+                <ComboBox ItemsSource="{Binding DataTypes}" SelectedItem="{Binding DataType, UpdateSourceTrigger=PropertyChanged}" />
+              </StackPanel>
+              <StackPanel Width="170" Margin="0,0,14,14">
+                <TextBlock Text="32 位字节序" Style="{StaticResource Caption}" />
+                <ComboBox ItemsSource="{Binding Orders}" SelectedItem="{Binding Order, UpdateSourceTrigger=PropertyChanged}" />
+              </StackPanel>
+            </WrapPanel>
+            <DataGrid ItemsSource="{Binding Rows}" IsReadOnly="True" Height="260">
+              <DataGrid.Columns>
+                <DataGridTextColumn Header="协议地址" Binding="{Binding Address}" Width="100" />
+                <DataGridTextColumn Header="引用地址" Binding="{Binding Reference}" Width="110" />
+                <DataGridTextColumn Header="原始寄存器" Binding="{Binding Raw}" Width="*" />
+                <DataGridTextColumn Header="HEX" Binding="{Binding Hex}" Width="160" />
+                <DataGridTextColumn Header="解析数值" Binding="{Binding Value}" Width="*" />
+              </DataGrid.Columns>
+            </DataGrid>
+          </StackPanel>
+        </Border>
+        <ContentControl Content="{Binding Hub}" ContentTemplate="{StaticResource LogPanel}" />
+      </StackPanel>
+    </ScrollViewer>
+  </DataTemplate>
+  <DataTemplate DataType="{x:Type local:SimulatorVm}">
+    <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" Padding="0,0,8,0">
+      <StackPanel>
+        <Border Style="{StaticResource CardBorder}" Margin="0,0,0,16">
+          <StackPanel>
+            <TextBlock Text="虚拟设备" Style="{StaticResource SectionTitle}" />
+            <StackPanel IsEnabled="{Binding CanConfigure}">
+              <WrapPanel>
+                <StackPanel Width="230" Margin="0,0,14,14">
+                  <TextBlock Text="模拟方式" Style="{StaticResource Caption}" />
+                  <ComboBox ItemsSource="{Binding Modes}" SelectedIndex="{Binding Mode, UpdateSourceTrigger=PropertyChanged}" />
+                </StackPanel>
+                <StackPanel Width="130" Margin="0,0,14,14">
+                  <TextBlock Text="站号 / Unit ID" Style="{StaticResource Caption}" />
+                  <TextBox Text="{Binding Unit, UpdateSourceTrigger=PropertyChanged}" />
+                </StackPanel>
+              </WrapPanel>
+              <WrapPanel Visibility="{Binding IsTcp, Converter={StaticResource BoolVisibility}}">
+                <StackPanel Width="250" Margin="0,0,14,14">
+                  <TextBlock Text="监听 IP" Style="{StaticResource Caption}" />
+                  <TextBox Text="{Binding Bind, UpdateSourceTrigger=PropertyChanged}" />
+                </StackPanel>
+                <StackPanel Width="120" Margin="0,0,14,14">
+                  <TextBlock Text="端口" Style="{StaticResource Caption}" />
+                  <TextBox Text="{Binding Port, UpdateSourceTrigger=PropertyChanged}" />
+                </StackPanel>
+              </WrapPanel>
+              <ContentControl Content="{Binding Serial}" ContentTemplate="{StaticResource SerialConfig}" Visibility="{Binding IsRtu, Converter={StaticResource BoolVisibility}}" />
+            </StackPanel>
+            <Button Content="{Binding ToggleText}" Command="{Binding ToggleCommand}" HorizontalAlignment="Left" Style="{StaticResource PrimaryButton}" Margin="0,10,0,0" />
+            <TextBlock Text="{Binding Status}" Foreground="{DynamicResource Accent}" FontSize="12" TextWrapping="Wrap" Margin="0,12,0,0" />
+          </StackPanel>
+        </Border>
+        <Border Style="{StaticResource CardBorder}" Margin="0,0,0,16">
+          <StackPanel>
+            <TextBlock Text="设备数据区" Style="{StaticResource SectionTitle}" />
+            <WrapPanel>
+              <StackPanel Width="300" Margin="0,0,14,14">
+                <TextBlock Text="数据区" Style="{StaticResource Caption}" />
+                <ComboBox ItemsSource="{Binding Areas}" SelectedIndex="{Binding Area, UpdateSourceTrigger=PropertyChanged}" />
+              </StackPanel>
+              <StackPanel Width="160" Margin="0,0,14,14">
+                <TextBlock Text="起始地址 / 从 0 开始" Style="{StaticResource Caption}" />
+                <TextBox Text="{Binding Start, UpdateSourceTrigger=PropertyChanged}" />
+              </StackPanel>
+              <StackPanel Width="100" Margin="0,0,14,14">
+                <TextBlock Text="展示数量" Style="{StaticResource Caption}" />
+                <TextBox Text="{Binding Count, UpdateSourceTrigger=PropertyChanged}" />
+              </StackPanel>
+            </WrapPanel>
+            <WrapPanel Margin="0,0,0,15">
+              <Button Content="刷新数据区" Command="{Binding RefreshCommand}" Margin="0,0,10,0" />
+              <Button Content="应用编辑" Command="{Binding ApplyCommand}" Style="{StaticResource PrimaryButton}" Margin="0,0,10,0" />
+              <TextBlock Text="双击数值编辑，应用后生效。网络写入后可刷新查看。" VerticalAlignment="Center" Foreground="{DynamicResource Muted}" FontSize="11" />
+            </WrapPanel>
+            <DataGrid ItemsSource="{Binding Rows}" Height="310">
+              <DataGrid.Columns>
+                <DataGridTextColumn Header="协议地址" Binding="{Binding Address}" Width="160" IsReadOnly="True" />
+                <DataGridTextColumn Header="数值（可编辑）" Binding="{Binding Value, UpdateSourceTrigger=PropertyChanged}" Width="*" />
+                <DataGridTextColumn Header="已应用的 HEX" Binding="{Binding Hex}" Width="200" IsReadOnly="True" />
+              </DataGrid.Columns>
+            </DataGrid>
+            <TextBlock Text="四个独立数据区各支持 0–65535 地址；TCP 仅响应匹配站号；RTU 支持广播写入且不回复。" Foreground="{DynamicResource Muted}" FontSize="11" Margin="0,14,0,0" TextWrapping="Wrap" />
+          </StackPanel>
+        </Border>
+        <ContentControl Content="{Binding Hub}" ContentTemplate="{StaticResource LogPanel}" />
+      </StackPanel>
+    </ScrollViewer>
+  </DataTemplate>
+  <DataTemplate DataType="{x:Type local:WorkbenchVm}">
+    <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" Padding="0,0,8,0">
+      <StackPanel>
+        <Border Style="{StaticResource CardBorder}" Margin="0,0,0,16">
+          <StackPanel>
+            <TextBlock Text="报文构造" Style="{StaticResource SectionTitle}" />
+            <WrapPanel>
+              <StackPanel Width="200" Margin="0,0,14,14">
+                <TextBlock Text="报文类型" Style="{StaticResource Caption}" />
+                <ComboBox ItemsSource="{Binding Modes}" SelectedIndex="{Binding Mode, UpdateSourceTrigger=PropertyChanged}" />
+              </StackPanel>
+              <StackPanel Width="150" Margin="0,0,14,14">
+                <TextBlock Text="TCP 事务 ID" Style="{StaticResource Caption}" />
+                <TextBox Text="{Binding Transaction, UpdateSourceTrigger=PropertyChanged}" />
+              </StackPanel>
+            </WrapPanel>
+            <StackPanel Visibility="{Binding IsModbus, Converter={StaticResource BoolVisibility}}">
+              <ContentControl Content="{Binding Query}" ContentTemplate="{StaticResource QueryConfig}" />
+            </StackPanel>
+            <StackPanel Visibility="{Binding IsCustom, Converter={StaticResource BoolVisibility}}">
+              <TextBlock Text="原始 HEX 数据（不含待追加的校验码）" Style="{StaticResource Caption}" />
+              <TextBox Text="{Binding Custom, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource CodeBox}" Height="88" Margin="0,0,0,14" />
+              <WrapPanel>
+                <StackPanel Width="220" Margin="0,0,14,14">
+                  <TextBlock Text="追加校验" Style="{StaticResource Caption}" />
+                  <ComboBox ItemsSource="{Binding Checksums}" SelectedItem="{Binding Checksum, UpdateSourceTrigger=PropertyChanged}" />
+                </StackPanel>
+              </WrapPanel>
+            </StackPanel>
+            <WrapPanel>
+              <Button Content="生成报文" Command="{Binding GenerateCommand}" Style="{StaticResource PrimaryButton}" Margin="0,0,10,0" />
+              <Button Content="载入模板" Command="{Binding LoadCommand}" Margin="0,0,10,0" />
+              <Button Content="保存模板" Command="{Binding SaveCommand}" Margin="0,0,10,0" />
+            </WrapPanel>
+          </StackPanel>
+        </Border>
+        <Border Style="{StaticResource CardBorder}" Margin="0,0,0,16">
+          <StackPanel>
+            <TextBlock Text="报文预览" Style="{StaticResource SectionTitle}" />
+            <TextBlock Text="{Binding LengthText}" Foreground="{DynamicResource Muted}" FontSize="12" Margin="0,0,0,12" />
+            <TextBox Text="{Binding Frame, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource CodeBox}" Height="110" />
+            <TextBlock Text="{Binding Details}" TextWrapping="Wrap" Foreground="{DynamicResource Muted}" FontSize="12" Margin="0,16,0,16" LineHeight="22" />
+            <Button Content="复制 HEX" Command="{Binding CopyCommand}" Margin="0,0,10,0" />
+          </StackPanel>
+        </Border>
+        <Border Style="{StaticResource CardBorder}" Margin="0,0,0,16">
+          <StackPanel>
+            <TextBlock Text="发送到现有连接" Style="{StaticResource SectionTitle}" />
+            <WrapPanel>
+              <StackPanel Width="370" Margin="0,0,14,14">
+                <TextBlock Text="目标连接" Style="{StaticResource Caption}" />
+                <ComboBox ItemsSource="{Binding Hub.Sessions}" SelectedItem="{Binding SelectedSession}" DisplayMemberPath="Name" />
+              </StackPanel>
+              <StackPanel Width="240" Margin="0,0,14,14">
+                <TextBlock Text="TCP 对端（留空 = 全部）" Style="{StaticResource Caption}" />
+                <TextBox Text="{Binding SelectedPeer, UpdateSourceTrigger=PropertyChanged}" />
+              </StackPanel>
+            </WrapPanel>
+            <TextBlock Text="先在串口或网络模块建立连接。TCP 对端格式为 IP:端口；UDP 使用连接中设置的目标地址。" Foreground="{DynamicResource Muted}" FontSize="11" TextWrapping="Wrap" Margin="0,0,0,16" />
+            <Button Content="发送预览中的报文  ↗" Command="{Binding SendCommand}" Style="{StaticResource PrimaryButton}" Margin="0,0,10,0" />
+          </StackPanel>
+        </Border>
+        <ContentControl Content="{Binding Hub}" ContentTemplate="{StaticResource LogPanel}" />
+      </StackPanel>
+    </ScrollViewer>
+  </DataTemplate>
+  <DataTemplate DataType="{x:Type local:MonitorVm}">
+    <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" Padding="0,0,8,0">
+      <StackPanel>
+        <Border Style="{StaticResource CardBorder}" Margin="0,0,0,16">
+          <StackPanel>
+            <TextBlock Text="报文时间线" Style="{StaticResource SectionTitle}" />
+            <WrapPanel>
+              <StackPanel Width="300" Margin="0,0,14,14">
+                <TextBlock Text="搜索 HEX / 文本 / 模块 / 对端" Style="{StaticResource Caption}" />
+                <TextBox Text="{Binding Filter, UpdateSourceTrigger=PropertyChanged}" />
+              </StackPanel>
+              <StackPanel Width="100" Margin="0,0,14,14">
+                <TextBlock Text="方向" Style="{StaticResource Caption}" />
+                <ComboBox ItemsSource="{Binding Directions}" SelectedItem="{Binding Direction, UpdateSourceTrigger=PropertyChanged}" />
+              </StackPanel>
+              <StackPanel Width="110" Margin="0,0,14,14">
+                <TextBlock Text="显示方式" Style="{StaticResource Caption}" />
+                <ComboBox ItemsSource="{Binding Displays}" SelectedItem="{Binding Display, UpdateSourceTrigger=PropertyChanged}" />
+              </StackPanel>
+            </WrapPanel>
+            <WrapPanel Margin="0,0,0,14">
+              <Button Content="{Binding PauseText}" Command="{Binding PauseCommand}" Margin="0,0,10,0" />
+              <Button Content="导出筛选结果" Command="{Binding ExportCommand}" Margin="0,0,10,0" />
+              <Button Content="载入 JSON" Command="{Binding ImportCommand}" Margin="0,0,10,0" />
+              <Button Content="清空" Command="{Binding ClearCommand}" Margin="0,0,10,0" />
+            </WrapPanel>
+            <DataGrid ItemsSource="{Binding View}" SelectedItem="{Binding Selected}" Height="310" IsReadOnly="True" local:AutoScroll.Enabled="True" local:AutoScroll.Paused="{Binding Paused}">
+              <DataGrid.Columns>
+                <DataGridTextColumn Header="时间" Binding="{Binding Time}" Width="116" />
+                <DataGridTemplateColumn Header="方向" Width="58">
+                  <DataGridTemplateColumn.CellTemplate>
+                    <DataTemplate>
+                      <TextBlock Text="{Binding Direction}" local:ThemeBrush.Key="{Binding Color}" FontWeight="Bold" />
+                    </DataTemplate>
+                  </DataGridTemplateColumn.CellTemplate>
+                </DataGridTemplateColumn>
+                <DataGridTextColumn Header="模块" Binding="{Binding Source}" Width="135" />
+                <DataGridTextColumn Header="对端" Binding="{Binding Peer}" Width="145" />
+                <DataGridTextColumn Header="字节" Binding="{Binding Length}" Width="55" />
+                <DataGridTemplateColumn Header="数据 / 备注" Width="*">
+                  <DataGridTemplateColumn.CellTemplate>
+                    <DataTemplate>
+                      <TextBlock TextTrimming="CharacterEllipsis" FontFamily="Consolas" ToolTip="{Binding Hex}">
+                        <TextBlock.Style>
+                          <Style TargetType="TextBlock">
+                            <Setter Property="Text" Value="{Binding Hex}" />
+                            <Style.Triggers>
+                              <DataTrigger Binding="{Binding DataContext.Display, RelativeSource={RelativeSource AncestorType=DataGrid}}" Value="文本">
+                                <Setter Property="Text" Value="{Binding Text}" />
+                              </DataTrigger>
+                              <DataTrigger Binding="{Binding Direction}" Value="ERR">
+                                <Setter Property="Text" Value="{Binding Note}" />
+                              </DataTrigger>
+                            </Style.Triggers>
+                          </Style>
+                        </TextBlock.Style>
+                      </TextBlock>
+                    </DataTemplate>
+                  </DataGridTemplateColumn.CellTemplate>
+                </DataGridTemplateColumn>
+              </DataGrid.Columns>
+            </DataGrid>
+            <DockPanel Margin="0,12,0,0">
+              <TextBlock Text="仅保留最近 2000 条；暂停只停止自动滚动，通信和记录继续。" Foreground="{DynamicResource Muted}" FontSize="11" />
+              <TextBlock Text="{Binding Hub.DroppedText}" HorizontalAlignment="Right" Foreground="{DynamicResource Muted}" FontSize="11" />
+            </DockPanel>
+          </StackPanel>
+        </Border>
+        <Border Style="{StaticResource CardBorder}" Margin="0,0,0,16">
+          <StackPanel>
+            <TextBlock Text="报文解析与校验" Style="{StaticResource SectionTitle}" />
+            <TextBox Text="{Binding Input, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource CodeBox}" Height="90" Margin="0,0,0,14" />
+            <WrapPanel>
+              <ComboBox ItemsSource="{Binding Protocols}" SelectedIndex="{Binding Protocol}" Width="160" Margin="0,0,10,0" />
+              <Button Content="解析报文" Command="{Binding AnalyzeCommand}" Style="{StaticResource PrimaryButton}" Margin="0,0,10,0" />
+              <Button Content="计算校验码" Command="{Binding ChecksumsCommand}" Margin="0,0,10,0" />
+              <Button Content="复制" Command="{Binding CopyCommand}" Margin="0,0,10,0" />
+            </WrapPanel>
+            <TextBox Text="{Binding Details, Mode=OneWay}" IsReadOnly="True" Style="{StaticResource CodeBox}" Height="136" Margin="0,16,0,0" FontSize="12" />
+          </StackPanel>
+        </Border>
+        <Border Style="{StaticResource CardBorder}" Margin="0,0,0,16">
+          <StackPanel>
+            <TextBlock Text="数值转换" Style="{StaticResource SectionTitle}" />
+            <WrapPanel>
+              <TextBox Text="{Binding NumberInput, UpdateSourceTrigger=PropertyChanged}" Width="230" Margin="0,0,12,0" />
+              <Button Content="转换  DEC / HEX / BIN" Command="{Binding NumberCommand}" Margin="0,0,10,0" />
+            </WrapPanel>
+            <TextBlock Text="{Binding NumberResult}" FontFamily="Consolas" TextWrapping="Wrap" LineHeight="24" Margin="0,14,0,0" />
+            <TextBlock Text="输入有符号 32 位整数或 0x 十六进制位模式；浮点与字节序解释可在 Modbus 主站的数据视图中使用。" FontSize="11" Foreground="{DynamicResource Muted}" Margin="0,12,0,0" TextWrapping="Wrap" />
+          </StackPanel>
+        </Border>
+      </StackPanel>
+    </ScrollViewer>
+  </DataTemplate>
+</ResourceDictionary>
