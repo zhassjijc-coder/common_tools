@@ -93,4 +93,6 @@ Build outputs are placed in `artifacts/`. To try PLC reads/writes without hardwa
 
 PLC communication uses [IoTClient](https://github.com/zhaopeiym/IoTClient), MQTT uses [MQTTnet](https://github.com/dotnet/MQTTnet), and OCR uses [Tesseract .NET](https://github.com/charlesw/tesseract) with offline models. No HslCommunication DLL is referenced.
 
-See [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md) and [licenses/](licenses/) for component notices and licenses.
+## License
+
+Project-owned code is licensed under the [MIT License](LICENSE). Third-party dependencies, models and runtimes remain subject to their respective licenses; see [third-party notices](THIRD-PARTY-NOTICES.md) and [licenses/](licenses/).

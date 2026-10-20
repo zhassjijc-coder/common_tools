@@ -92,4 +92,8 @@ Windows 使用 `linux_ubuntu/scripts/test.ps1`。输出位于 `linux_ubuntu/arti
 
 Git 忽略文件仅在仓库根目录，排除两端的构建结果、`.venv`、Python 缓存、测试日志、发布包、私密配置和本地 AI 文档；保留源码、公开说明、截图及许可证。
 
-依赖与来源见 [第三方说明](THIRD-PARTY-NOTICES.md)，Qt 安装参考 [官方指南](https://doc.qt.io/qtforpython-6.8/gettingstarted.html)。
+Qt 安装参考 [官方指南](https://doc.qt.io/qtforpython-6.8/gettingstarted.html)。
+
+## 许可证
+
+项目自有代码采用 [MIT 许可证](LICENSE)。第三方依赖、模型和运行库仍遵守各自许可证，详见 [第三方说明](THIRD-PARTY-NOTICES.md)。

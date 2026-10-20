@@ -26,6 +26,7 @@
 
 ```text
 .gitignore                # 全仓库共享忽略规则
+LICENSE                   # 项目自有代码的 MIT 许可证
 README.md / README.en.md  # 仓库入口
 windows/                  # 原 Windows WPF 程序
   src/ tests/ scripts/
@@ -54,4 +55,8 @@ bash linux_ubuntu/scripts/run.sh
 
 Python 版已在 Windows 完成协议回环、Qt 界面和关闭清理测试；**Ubuntu 实机验证待完成**。截图与全局热键优先使用 X11；Wayland 下会明确提示限制。真实 PLC、串口时序、ZLAN 硬件及 MQTT TLS/WS/WSS 端点仍需对应环境验证。虚拟串口模块继续隐藏。
 
-两个版本的模块与主要操作对应，配置、模板和 PLC 内存快照不保证跨版本互换。第三方许可分别见 [Windows](windows/THIRD-PARTY-NOTICES.md) / [Python Qt](linux_ubuntu/THIRD-PARTY-NOTICES.md)。
+两个版本的模块与主要操作对应，配置、模板和 PLC 内存快照不保证跨版本互换。
+
+## 许可证
+
+项目自有代码采用 [MIT 许可证](LICENSE)。第三方依赖、模型和运行库仍遵守各自许可证，详见 [Windows 第三方说明](windows/THIRD-PARTY-NOTICES.md) / [Python Qt 第三方说明](linux_ubuntu/THIRD-PARTY-NOTICES.md)。

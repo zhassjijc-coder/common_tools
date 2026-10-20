@@ -9,6 +9,7 @@ try {
     if ($NoRestore) { $restoreArgs += '--no-restore' }
     dotnet publish src/LinkLab.App/LinkLab.App.csproj -c Release -r win-x64 --self-contained true "-p:RuntimeFrameworkVersion=$RuntimeVersion" -o $publishDir --nologo -m:1 @restoreArgs
     if ($LASTEXITCODE -ne 0) { throw 'Publish failed.' }
+    Copy-Item -LiteralPath LICENSE -Destination (Join-Path $publishDir 'LICENSE') -Force
     Copy-Item -LiteralPath README.md -Destination (Join-Path $publishDir 'README.md') -Force
     Copy-Item -LiteralPath README.en.md -Destination (Join-Path $publishDir 'README.en.md') -Force
     $docsDir = Join-Path $publishDir 'docs'

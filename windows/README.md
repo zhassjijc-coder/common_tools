@@ -93,4 +93,6 @@ dotnet run --project src/LinkLab.App -c Release --no-build
 
 PLC 使用 [IoTClient](https://github.com/zhaopeiym/IoTClient)，MQTT 使用 [MQTTnet](https://github.com/dotnet/MQTTnet)，OCR 使用 [Tesseract .NET](https://github.com/charlesw/tesseract) 与离线模型。项目不引用 HslCommunication DLL。
 
-第三方组件与许可证见 [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md) 和 [licenses/](licenses/)。
+## 许可证
+
+项目自有代码采用 [MIT 许可证](LICENSE)。第三方依赖、模型和运行库仍遵守各自许可证，详见 [第三方说明](THIRD-PARTY-NOTICES.md) 和 [licenses/](licenses/)。

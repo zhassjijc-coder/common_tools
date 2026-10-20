@@ -26,6 +26,7 @@ A desktop communication workbench for embedded, industrial and IoT development. 
 
 ```text
 .gitignore                # shared repository exclusions
+LICENSE                   # MIT license for project-owned code
 README.md / README.en.md
 windows/
   src/ tests/ scripts/
@@ -54,4 +55,8 @@ See [Ubuntu setup](linux_ubuntu/README.en.md#setup-and-run) for system libraries
 
 The Python edition passed Windows loopback, Qt UI and cleanup checks; **Ubuntu hardware/desktop validation is pending**. X11 is preferred for capture/global shortcuts; Wayland limitations are shown explicitly. Real PLC/serial timing, ZLAN hardware and MQTT TLS/WS/WSS endpoints still require device/environment validation. Virtual serial remains hidden.
 
-The two editions provide corresponding modules and workflows; configuration, templates and PLC snapshots are not guaranteed to be interchangeable. Third-party notices: [Windows](windows/THIRD-PARTY-NOTICES.md) / [Python Qt](linux_ubuntu/THIRD-PARTY-NOTICES.md).
+The two editions provide corresponding modules and workflows; configuration, templates and PLC snapshots are not guaranteed to be interchangeable.
+
+## License
+
+Project-owned code is licensed under the [MIT License](LICENSE). Third-party dependencies, models and runtimes remain subject to their respective licenses; see the [Windows notices](windows/THIRD-PARTY-NOTICES.md) / [Python Qt notices](linux_ubuntu/THIRD-PARTY-NOTICES.md).

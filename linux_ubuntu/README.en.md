@@ -92,4 +92,8 @@ Windows provides `linux_ubuntu/scripts/test.ps1`. Generated results go to `linux
 
 The only Git ignore file is at the repository root, covering both platforms' build output, virtual environments, caches, logs, archives, secrets and local AI notes while retaining public documentation, screenshots and licenses.
 
-See [third-party notices](THIRD-PARTY-NOTICES.md) and the [official Qt setup guide](https://doc.qt.io/qtforpython-6.8/gettingstarted.html).
+See the [official Qt setup guide](https://doc.qt.io/qtforpython-6.8/gettingstarted.html) for Qt installation.
+
+## License
+
+Project-owned code is licensed under the [MIT License](LICENSE). Third-party dependencies, models and runtimes remain subject to their respective licenses; see [third-party notices](THIRD-PARTY-NOTICES.md).
