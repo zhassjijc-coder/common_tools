@@ -9,11 +9,11 @@ import time
 import unittest
 from unittest.mock import patch
 
-from PySide6.QtCore import QObject, QPointF, QRect, QRectF, Signal, Qt
-from PySide6.QtGui import QColor, QFont, QFontDatabase, QImage, QPainter
+from PySide6.QtCore import QCoreApplication, QEvent, QObject, QPointF, QRect, QRectF, Signal, Qt
+from PySide6.QtGui import QColor, QFont, QFontDatabase, QImage, QKeyEvent, QMouseEvent, QPainter
 from PySide6.QtWidgets import QApplication, QPushButton
 
-from linklab.capture.editor import CaptureController, CaptureOverlay, DesktopFrame, PinnedImageWindow
+from linklab.capture.editor import CaptureController, CaptureOverlay, CaptureScreen, CaptureSession, DesktopFrame, PinnedImageWindow
 from linklab.capture.hotkeys import GlobalHotkeys
 from linklab.capture import ocr
 from linklab.services.settings import AutostartService, SettingsStore
@@ -59,6 +59,8 @@ class CaptureTests(unittest.TestCase):
     def tearDown(self):
         for window in self.windows:
             window.close()
+        # Exercise actual Qt destruction, not just visibility/state flags.
+        QCoreApplication.sendPostedEvents(None, QEvent.Type.DeferredDelete)
         APP.processEvents()
 
     def overlay(self):
@@ -113,6 +115,159 @@ class CaptureTests(unittest.TestCase):
         self.assertLess(overlay.selected_image().pixelColor(10, 30).green(), 40)
         overlay.selection = QRectF(450, 20, 100, 100)
         self.assertEqual(overlay.selected_image(False).size().width(), 200)
+
+    def multi_screen_session(self):
+        image = sample(512, 160)
+        painter = QPainter(image)
+        painter.fillRect(QRect(0, 0, 256, 160), QColor("red"))
+        painter.fillRect(QRect(256, 0, 256, 144), QColor("#00d040"))
+        painter.end()
+        frame = DesktopFrame(image, QRect(-256, -20, 512, 160), views=(
+            CaptureScreen(None, QRect(-256, -20, 171, 107), QRectF(0, 0, 256, 160)),
+            CaptureScreen(None, QRect(0, -20, 205, 115), QRectF(256, 0, 256, 144)),
+        ))
+        with patch("linklab.capture.editor.desktop_cursor_position", return_value=QPointF(-200, 0)):
+            session = CaptureSession(frame)
+        self.windows.append(session)
+        return session
+
+    def test_per_monitor_views_cover_each_logical_screen_and_share_zoom(self):
+        session = self.multi_screen_session()
+        first, second = session.windows
+        self.assertEqual(first.geometry(), QRect(-256, -20, 171, 107))
+        self.assertEqual(second.geometry(), QRect(0, -20, 205, 115))
+        self.assertEqual(first._screen(QPointF(256, 160)), QPointF(171, 107))
+        self.assertEqual(second._screen(QPointF(512, 144)), QPointF(205, 115))
+        for view, point in ((first, QPointF(100, 60)), (second, QPointF(400, 80))):
+            self.assertLess((view._world(view._screen(point)) - point).manhattanLength(), .0001)
+        first.selection = QRectF(246, 30, 20, 60)
+        first._update_ui()
+        original = ocr.png_bytes(first.selected_image(False))
+        first.set_zoom(2)
+        self.assertEqual(second.zoom, 2)
+        self.assertEqual(second.pan, first.pan)
+        second.set_zoom(.5)
+        self.assertEqual(first.zoom, .5)
+        self.assertEqual(original, ocr.png_bytes(second.selected_image(False)))
+
+    def test_cross_monitor_mouse_drag_and_native_pixel_export(self):
+        session = self.multi_screen_session()
+        first, second = session.windows
+        def event(kind, button, buttons):
+            # Deliberately wrong local coordinates: a grabbed window must use
+            # the native global cursor when crossing to a different-DPI screen.
+            return QMouseEvent(kind, QPointF(1, 1), QPointF(1, 1), button, buttons, Qt.KeyboardModifier.NoModifier)
+        with patch("linklab.capture.editor.desktop_cursor_position", return_value=QPointF(-10, 10)):
+            first.mousePressEvent(event(QEvent.Type.MouseButtonPress, Qt.MouseButton.LeftButton, Qt.MouseButton.LeftButton))
+        with patch("linklab.capture.editor.desktop_cursor_position", return_value=QPointF(10, 70)):
+            first.mouseMoveEvent(event(QEvent.Type.MouseMove, Qt.MouseButton.NoButton, Qt.MouseButton.LeftButton))
+            first.mouseReleaseEvent(event(QEvent.Type.MouseButtonRelease, Qt.MouseButton.LeftButton, Qt.MouseButton.NoButton))
+        self.assertEqual(first.selection, QRectF(246, 30, 20, 60))
+        self.assertEqual(second.selection, first.selection)
+        self.assertIs(session.active, second)
+        raw = second.selected_image(False)
+        self.assertEqual((raw.width(), raw.height()), (20, 60))
+        self.assertEqual(raw.pixelColor(9, 59), QColor("red"))
+        self.assertEqual(raw.pixelColor(10, 59), QColor("#00d040"))
+        second.add_box(QPointF(2, 5), QPointF(18, 50), color="#0000ff")
+        self.assertIs(first.marks, second.marks)
+        self.assertEqual(ocr.png_bytes(first.selected_image()), ocr.png_bytes(second.selected_image()))
+        second.undo()
+        self.assertFalse(first.marks)
+
+    def test_second_monitor_render_has_content_at_bottom_right(self):
+        session = self.multi_screen_session()
+        first, second = session.windows
+        first.selection = QRectF(0, 0, 512, 160)
+        first._update_ui()
+        session.show()
+        APP.processEvents()
+        for view in session.windows:
+            view.toolbar.hide()
+            view._size.hide()
+        image = second.grab().toImage()
+        pixel = image.pixelColor(image.width() - 4, image.height() - 4)
+        self.assertGreater(pixel.green(), 150)
+        self.assertLess(pixel.red(), 40)
+        self.assertEqual(second.selected_image(False).size(), session.frame.image.size())
+
+    def test_session_completion_and_cancellation_close_every_monitor(self):
+        session = self.multi_screen_session()
+        results, closed = [], []
+        session.completed.connect(lambda image, raw, action: results.append((image, raw, action)))
+        session.closed.connect(lambda: closed.append(True))
+        first, second = session.windows
+        first.selection = QRectF(240, 20, 40, 60)
+        first._update_ui()
+        session.show()
+        second.finish("ocr")
+        self.assertEqual(len(results), 1)
+        self.assertEqual(results[0][2], "ocr")
+        self.assertEqual(results[0][0].width(), 40)
+        self.assertEqual(len(closed), 1)
+        self.assertTrue(all(not view.isVisible() for view in session.windows))
+        session.close()
+        self.assertEqual(len(closed), 1)
+
+    def test_controller_tracks_active_monitor_and_cancels_all_views(self):
+        frame = self.multi_screen_session().frame
+        controller = CaptureController(Hub(), SettingsStore(test_mode=True))
+        try:
+            with patch("linklab.capture.editor.capture_desktop", return_value=frame), \
+                 patch("linklab.capture.editor.desktop_cursor_position", return_value=QPointF(-200, 0)):
+                controller.capture()
+                limit = time.monotonic() + 2
+                while controller._capture_session is None and time.monotonic() < limit:
+                    APP.processEvents()
+                    time.sleep(.005)
+            self.assertIsNotNone(controller._capture_session)
+            session = controller._capture_session
+            session.activate(session.windows[1])
+            self.assertIs(controller._overlay, session.windows[1])
+            controller.set_enabled(False)
+            self.assertIsNone(controller._capture_session)
+            self.assertIsNone(controller._overlay)
+            self.assertFalse(controller._capturing)
+            self.assertTrue(all(not view.isVisible() for view in session.windows))
+        finally:
+            controller.close_resources()
+
+    def test_cross_dpi_unchanged_text_edit_preserves_native_font_and_wrap(self):
+        frame = self.multi_screen_session().frame
+        frame.views = (
+            CaptureScreen(None, QRect(-256, -20, 256, 160), QRectF(0, 0, 256, 160)),
+            CaptureScreen(None, QRect(0, -20, 171, 96), QRectF(256, 0, 256, 144)),
+        )
+        with patch("linklab.capture.editor.desktop_cursor_position", return_value=QPointF(-200, 0)):
+            session = CaptureSession(frame)
+        self.windows.append(session)
+        first, second = session.windows
+        first.selection = QRectF(10, 10, 350, 130)
+        first.begin_text(QPointF(10, 10))
+        first._editor.setPlainText("DPI 150%\n" + "M" * 40)
+        first.commit_text()
+        font, wrap = first.marks[0].font_size, first.marks[0].wrap_width
+        first.move_selection(QPointF(140, 0))
+        before = ocr.png_bytes(first.selected_image())
+        session.activate(second)
+        second.begin_text(second.marks[0].rect.topLeft(), 0)
+        second.commit_text()
+        self.assertEqual(second.marks[0].font_size, font)
+        self.assertEqual(second.marks[0].wrap_width, wrap)
+        self.assertEqual(ocr.png_bytes(second.selected_image()), before)
+        second.begin_text(second.marks[0].rect.topLeft(), 0)
+        second.set_font_size(30)
+        second.commit_text()
+        self.assertEqual(second.marks[0].font_size, round(30 / second._view_sx))
+
+    def test_space_pan_released_on_another_monitor_does_not_stick(self):
+        session = self.multi_screen_session()
+        first, second = session.windows
+        first.keyPressEvent(QKeyEvent(QEvent.Type.KeyPress, Qt.Key.Key_Space, Qt.KeyboardModifier.NoModifier))
+        self.assertTrue(first._space and second._space)
+        session.activate(second)
+        second.keyReleaseEvent(QKeyEvent(QEvent.Type.KeyRelease, Qt.Key.Key_Space, Qt.KeyboardModifier.NoModifier))
+        self.assertFalse(first._space or second._space)
 
     def test_existing_color_text_wrap_and_undo(self):
         overlay = self.overlay()

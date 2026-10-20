@@ -1,14 +1,14 @@
 [简体中文](README.md) | **English**
 
-# LinkLab
+# Device Debug Tools | Serial, Modbus, PLC & MQTT Debugging Toolbox
 
 This is the `windows/` subproject. [Repository overview](../README.en.md) · [Ubuntu / Python Qt edition](../linux_ubuntu/README.en.md). Documentation lives in `windows/docs/`, generated output in `windows/artifacts/`, and shared Git exclusions in the repository root `.gitignore`.
 
-A Windows desktop toolkit for industrial communication, embedded systems, and IoT development. Debug serial ports, networks, Modbus, PLCs, and MQTT, with screenshot and OCR utilities in the same workspace.
+The Windows edition of **Device Debug Tools** (设备联调工具) is a desktop toolkit for industrial communication, embedded systems, and IoT development. Debug serial ports, networks, Modbus, PLCs, and MQTT, with screenshot and OCR utilities in the same workspace.
 
 Built with **.NET 10 + WPF + MVVM**. Light theme by default, with a dark theme available. Current version: **1.0**. The application UI is currently in Chinese.
 
-![LinkLab light-theme workspace](docs/images/home.png)
+![Device Debug Tools · Windows light-theme workspace](docs/images/home.png)
 
 ## Features
 
@@ -30,21 +30,21 @@ Built with **.NET 10 + WPF + MVVM**. Light theme by default, with a dark theme a
 
 **PLC debugging**
 
-![PLC connection and read/write settings](docs/images/plc.png)
+![Device Debug Tools · PLC connection and read/write settings](docs/images/plc.png)
 
 **MQTT debugging**
 
-![MQTT connection, subscriptions, and publishing](docs/images/mqtt.png)
+![Device Debug Tools · MQTT connection, subscriptions, and publishing](docs/images/mqtt.png)
 
 **System settings, capture, and offline OCR**
 
-![System settings and capture preferences](docs/images/quick-tools.png)
+![Device Debug Tools · System settings and capture preferences](docs/images/quick-tools.png)
 
-![Capture selection editing, zoom and colored annotations](docs/images/capture-editor.png)
+![Device Debug Tools · Capture selection editing, zoom and colored annotations](docs/images/capture-editor.png)
 
 **Device network configuration**
 
-![Device discovery and network configuration](docs/images/network-config.png)
+![Device Debug Tools · Device discovery and network configuration](docs/images/network-config.png)
 
 </details>
 

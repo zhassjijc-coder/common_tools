@@ -69,14 +69,14 @@ public sealed class WorkbenchVm : PageVm
     private void Save()
     {
         _ = ByteTools.ParseHex(Frame);
-        var dialog = new SaveFileDialog { Filter = "LinkLab 报文模板|*.json", FileName = "报文模板.json" };
+        var dialog = new SaveFileDialog { Filter = "设备联调工具报文模板|*.json", FileName = "设备联调工具-报文模板.json" };
         if (dialog.ShowDialog() != true) return;
         File.WriteAllText(dialog.FileName, JsonSerializer.Serialize(new FrameTemplate(Path.GetFileNameWithoutExtension(dialog.FileName), Frame, Details), new JsonSerializerOptions { WriteIndented = true }));
         Hub.Notice = "模板已保存";
     }
     private void Load()
     {
-        var dialog = new OpenFileDialog { Filter = "LinkLab 报文模板|*.json" }; if (dialog.ShowDialog() != true) return;
+        var dialog = new OpenFileDialog { Filter = "设备联调工具报文模板|*.json" }; if (dialog.ShowDialog() != true) return;
         if (new FileInfo(dialog.FileName).Length > 2_000_000) throw new ArgumentException("模板文件过大。");
         var template = JsonSerializer.Deserialize<FrameTemplate>(File.ReadAllText(dialog.FileName)) ?? throw new FormatException("模板内容为空。");
         _ = ByteTools.ParseHex(template.Hex); Mode = 2; Custom = template.Hex; Checksum = ChecksumKind.None;
@@ -137,7 +137,7 @@ public sealed class MonitorVm : PageVm
     }
     private void Export()
     {
-        var dialog = new SaveFileDialog { Filter = "CSV 表格|*.csv|JSON 报文记录|*.json", FileName = $"LinkLab-{DateTime.Now:yyyyMMdd-HHmmss}.csv" };
+        var dialog = new SaveFileDialog { Filter = "CSV 表格|*.csv|JSON 报文记录|*.json", FileName = $"设备联调工具-{DateTime.Now:yyyyMMdd-HHmmss}.csv" };
         if (dialog.ShowDialog() != true) return;
         var rows = View.Cast<LogRow>().ToArray();
         if (Path.GetExtension(dialog.FileName).Equals(".json", StringComparison.OrdinalIgnoreCase)) File.WriteAllText(dialog.FileName, JsonSerializer.Serialize(rows.Select(x => x.Entry), new JsonSerializerOptions { WriteIndented = true }));
@@ -152,7 +152,7 @@ public sealed class MonitorVm : PageVm
     }
     private void Import()
     {
-        var dialog = new OpenFileDialog { Filter = "LinkLab JSON 报文记录|*.json" }; if (dialog.ShowDialog() != true) return;
+        var dialog = new OpenFileDialog { Filter = "设备联调工具 JSON 报文记录|*.json" }; if (dialog.ShowDialog() != true) return;
         if (new FileInfo(dialog.FileName).Length > 32_000_000) throw new ArgumentException("导入文件最大为 32 MB。");
         var rows = JsonSerializer.Deserialize<WireEvent[]>(File.ReadAllText(dialog.FileName)) ?? [];
         foreach (var e in rows.TakeLast(2000)) if (e.Data is not null) Hub.Record(e with { Source = "导入 · " + e.Source });

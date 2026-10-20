@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "linklab-qt"
 version = "1.0"
-description = "LinkLab desktop communication workbench for Ubuntu and Windows"
+description = "Device Debug Tools: serial, Modbus, PLC and MQTT debugging toolbox for Ubuntu and Windows"
 readme = "README.en.md"
 license = "MIT"
 license-files = ["LICENSE", "THIRD-PARTY-NOTICES.md"]

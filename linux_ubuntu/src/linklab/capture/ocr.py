@@ -39,7 +39,7 @@ def availability() -> str:
     if executable:
         return "本机 Tesseract · 支持的识别语言以本机安装的语言包为准"
     if _windows_engine():
-        return "使用本机 LinkLab Windows 包内的 Tesseract DLL / tessdata"
+        return "使用本机设备联调工具 Windows 包内的 Tesseract DLL / tessdata"
     return "未找到本机 Tesseract。Ubuntu 请安装 tesseract-ocr、tesseract-ocr-eng、tesseract-ocr-chi-sim；Windows 请安装 Tesseract 或保留现有 Windows 包的 x64 DLL 与 tessdata。"
 
 

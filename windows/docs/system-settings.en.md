@@ -1,6 +1,6 @@
 [简体中文](system-settings.md) | **English**
 
-# System settings
+# Device Debug Tools · System settings
 
 The former Quick tools module is now **系统配置** (System settings). Capture, image pinning and offline OCR remain on this page.
 
@@ -15,7 +15,7 @@ The first two options are initially off and changes are saved immediately. Launc
 
 Double-click the tray icon to restore the window. Its menu opens system settings, toggles capture or exits. Launching another copy activates the resident new-version instance in the same Windows session. The main window X still exits and releases connections, hotkeys and floating windows.
 
-Automatic launch uses the current user's Windows Run entry without administrator privileges. Keep the complete portable folder in a stable location. Exit the old version before running an upgrade; click **更新为当前版本** (Update to current version) if the startup path differs. Update it after moving the folder too. If the entry is registered but not running, check that Windows Startup apps allows LinkLab.
+Automatic launch uses the current user's Windows Run entry without administrator privileges. Keep the complete portable folder in a stable location. Exit the old version before running an upgrade; click **更新为当前版本** (Update to current version) if the startup path differs. Update it after moving the folder too. If the entry is registered but not running, check that Windows Startup apps allows Device Debug Tools (the executable remains `LinkLab.exe`).
 
 Windows may delay startup applications. This feature runs after user sign-in and is not a pre-login Windows service. [Microsoft Run entry documentation](https://learn.microsoft.com/en-us/windows/win32/setupapi/run-and-runonce-registry-keys)
 

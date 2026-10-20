@@ -6,7 +6,7 @@
           <Grid>
             <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="160"/></Grid.ColumnDefinitions>
             <StackPanel>
-              <TextBlock Text="LINKLAB  /  YOUR DEVICE WORKSPACE" Foreground="{DynamicResource Accent}" FontSize="10" FontWeight="SemiBold" Margin="0,0,0,5"/>
+              <TextBlock Text="设备联调工具  /  串口、Modbus、PLC、MQTT 调试工具箱" Foreground="{DynamicResource Accent}" FontSize="10" FontWeight="SemiBold" Margin="0,0,0,5" TextTrimming="CharacterEllipsis"/>
               <TextBlock Text="让设备调试，清晰有序。" FontSize="22" FontWeight="SemiBold"/>
               <TextBlock Text="连接、收发、模拟与分析，从一个工作台开始。" Foreground="{DynamicResource Muted}" FontSize="12" Margin="0,6,0,0"/>
             </StackPanel>

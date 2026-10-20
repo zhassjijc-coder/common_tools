@@ -1,15 +1,15 @@
 **简体中文** | [English](README.en.md)
 
-# LinkLab · 连接实验室
+# 设备联调工具｜串口、Modbus、PLC、MQTT 调试工具箱
 
-面向上位机、嵌入式与物联网开发的桌面调试工具。串口、TCP/UDP、Modbus、PLC、MQTT、网口配置与截图 OCR 集中在一个白色主题工作台。当前版本统一为 **1.0**。
+**设备联调工具**面向上位机、嵌入式与物联网开发，将串口、TCP/UDP、Modbus、PLC、MQTT、网口配置与截图 OCR 集中在一个白色主题桌面工作台。当前版本统一为 **1.0**。
 
 | 版本 | 技术 | 入口与说明 |
 | --- | --- | --- |
 | Windows | .NET 10 / WPF | [Windows 使用说明](windows/README.md) |
 | Ubuntu / 跨平台 | Python 3.10–3.13 / PySide6 Qt 6 | [Python Qt 使用说明](linux_ubuntu/README.md)；可在 Windows 运行与测试 |
 
-![Python Qt 白色主题工作台](linux_ubuntu/docs/images/home.png)
+![设备联调工具 · Python Qt 白色主题工作台](linux_ubuntu/docs/images/home.png)
 
 ## 功能
 

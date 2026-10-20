@@ -49,7 +49,7 @@ public sealed class SystemSettingsVm : PageVm
             string? command = _startup.Read();
             _autoStart = !string.IsNullOrWhiteSpace(command); Raise(nameof(AutoStart));
             DifferentVersion = _autoStart && !string.Equals(command, StartupCommand.Build(_startup.ExecutablePath), StringComparison.OrdinalIgnoreCase);
-            StartupStatus = !_autoStart ? "未开启 · 登录 Windows 后不会自动运行 LinkLab。"
+            StartupStatus = !_autoStart ? "未开启 · 登录 Windows 后不会自动运行设备联调工具。"
                 : DifferentVersion ? "启动项指向其他版本或参数，点击「更新为当前版本」后使用当前程序。"
                 : "已登记当前版本 · 登录 Windows 后静默驻留托盘，不弹出主窗口。";
         }

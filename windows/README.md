@@ -1,14 +1,14 @@
 **简体中文** | [English](README.en.md)
 
-# LinkLab · 连接实验室
+# 设备联调工具｜串口、Modbus、PLC、MQTT 调试工具箱
 
-面向上位机、嵌入式和物联网开发的 Windows 桌面调试工具。将串口、网络、Modbus、PLC、MQTT 和截图 OCR 集中在一个工作台，减少调试时来回切换工具。
+**设备联调工具**的 Windows 版，面向上位机、嵌入式和物联网开发。将串口、网络、Modbus、PLC、MQTT 和截图 OCR 集中在一个桌面工作台，减少调试时来回切换工具。
 
 基于 **.NET 10 + WPF + MVVM**，默认白色主题，支持深色切换。当前版本 **1.0**，应用界面为中文。
 
 这是仓库的 `windows/` 子项目。[返回仓库首页](../README.md) · [Ubuntu / Python Qt 版](../linux_ubuntu/README.md)。文档位于 `windows/docs/`，发布和验证输出位于 `windows/artifacts/`；Git 忽略规则统一放在仓库根目录 `.gitignore`。
 
-![LinkLab 白色主题工作台](docs/images/home.png)
+![设备联调工具 · Windows 白色主题工作台](docs/images/home.png)
 
 ## 功能
 
@@ -30,21 +30,21 @@
 
 **PLC 调试**
 
-![PLC 客户端配置与读写](docs/images/plc.png)
+![设备联调工具 · PLC 客户端配置与读写](docs/images/plc.png)
 
 **MQTT 调试**
 
-![MQTT 连接、订阅与发布](docs/images/mqtt.png)
+![设备联调工具 · MQTT 连接、订阅与发布](docs/images/mqtt.png)
 
 **系统配置、截图与离线 OCR**
 
-![系统配置与截图设置](docs/images/quick-tools.png)
+![设备联调工具 · 系统配置与截图设置](docs/images/quick-tools.png)
 
-![截图选区移动、缩放与彩色标注](docs/images/capture-editor.png)
+![设备联调工具 · 截图选区移动、缩放与彩色标注](docs/images/capture-editor.png)
 
 **网口配置软件**
 
-![网口设备发现与参数配置](docs/images/network-config.png)
+![设备联调工具 · 网口设备发现与参数配置](docs/images/network-config.png)
 
 </details>
 

@@ -1,6 +1,6 @@
-# Third-party components
+# Device Debug Tools · Third-party components (Python Qt)
 
-The Python edition installs dependencies through pip; it does not bundle or modify their source. No HslCommunication, commercial PLC SDK or virtual serial driver is included.
+The Python Qt edition of Device Debug Tools (设备联调工具) installs dependencies through pip; it does not bundle or modify their source. No HslCommunication, commercial PLC SDK or virtual serial driver is included.
 
 | Component | Version / purpose | License and upstream |
 | --- | --- | --- |

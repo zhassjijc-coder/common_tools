@@ -1,10 +1,10 @@
 [简体中文](README.md) | **English** · [Repository](../README.en.md)
 
-# LinkLab 1.0 · Python Qt
+# Device Debug Tools | Serial, Modbus, PLC & MQTT Debugging Toolbox
 
-An Ubuntu-oriented LinkLab edition implemented with **Python and PySide6 / Qt Widgets**, also runnable on Windows. Light theme by default, optional dark theme, and System settings pinned at the bottom. Serial, Modbus and PLC protocols are independent implementations; MQTT uses Eclipse Paho. No HslCommunication or paid vendor DLL is required.
+The Python Qt edition of **Device Debug Tools** (设备联调工具) is implemented with **Python and PySide6 / Qt Widgets** for Ubuntu and is also runnable on Windows. Current version: **1.0**. Light theme by default, optional dark theme, and System settings pinned at the bottom. Serial, Modbus and PLC protocols are independent implementations; MQTT uses Eclipse Paho. No HslCommunication or paid vendor DLL is required.
 
-![Workspace](docs/images/home.png)
+![Device Debug Tools · Python Qt workspace](docs/images/home.png)
 
 ## Features
 
@@ -24,15 +24,15 @@ Virtual serial remains hidden. Use existing `/dev/ttyUSB*`, `/dev/ttyACM*` or CO
 <details>
 <summary>Screenshots</summary>
 
-![PLC](docs/images/plc.png)
+![Device Debug Tools · Python Qt PLC client](docs/images/plc.png)
 
-![PLC server and simulated memory](docs/images/plc-server.png)
+![Device Debug Tools · Python Qt PLC server and simulated memory](docs/images/plc-server.png)
 
-![MQTT](docs/images/mqtt.png)
+![Device Debug Tools · Python Qt MQTT debugging](docs/images/mqtt.png)
 
-![Device configuration demo; no hardware write](docs/images/network-config.png)
+![Device Debug Tools · Python Qt device configuration demo; no hardware write](docs/images/network-config.png)
 
-![Capture editor](docs/images/capture-editor.png)
+![Device Debug Tools · Python Qt capture editor](docs/images/capture-editor.png)
 
 </details>
 
@@ -74,7 +74,7 @@ Alternatively, run `.venv/Scripts/python.exe main.py` inside `linux_ubuntu/` (Ub
 - **PLC roles**: Use the top dropdown to choose client/monitoring or server/simulated memory. In server mode, set the listening IP and port, start the server, then read or write its memory. Switch back to the client to connect to the same simulator. Role selection starts no communication; switching to the server stops client polling.
 - **Connect PLC**: The client button opens a real connection and verifies S7/FINS handshakes; MC 3E reports TCP connectivity. Connection failures show the endpoint and reason beside the controls. Adjust the timeout and retry if needed. Connecting does not read or write PLC memory. Changing connection parameters releases the old connection; read/write actions can still connect on demand.
 - **Without hardware:** choose a PLC protocol and press “本机联调”. For Modbus, start the TCP simulator, then connect the master to its port. Avoid enabling echo on both ends of the same connection.
-- **Capture:** enable current shortcuts in System settings. F1 selects a region; drag the selection/handles, use the wheel to zoom and Space/middle-drag to pan. T adds text, R rectangles, S squares; colors are editable. Copy/save/pin include marks; OCR reads the original selection. F3 pins support wheel zoom and Ctrl+wheel opacity.
+- **Capture:** enable current shortcuts in System settings. F1 supports selections across monitors with different scale factors; drag the selection/handles, use the wheel to zoom and Space/middle-drag to pan. T adds text, R rectangles, S squares; colors are editable. Windows exports native screen pixels; changing the monitor layout cancels the current capture. Copy/save/pin include marks; OCR reads the original selection. F3 pins support wheel zoom and Ctrl+wheel opacity.
 - **Desktop differences:** global F1/F3 support Windows and X11 with conflict detection. Wayland restrictions are shown, not bypassed. If shortcuts or desktop capture are unavailable, use your system capture tool, then pin its clipboard image or open an image for OCR. Tray visibility depends on desktop support/extensions.
 - **OCR:** Ubuntu uses local Tesseract and installed languages. Windows uses a local Tesseract installation or this repository's Windows native DLL/models. No image upload.
 - **MQTT:** an external Broker is required. TLS validates the certificate and hostname using system trust or a supplied CA. Client authentication uses PEM certificate/key files, not PFX. Templates omit connection/private-key passwords.

@@ -52,7 +52,7 @@ public sealed class CaptureOverlay : Window
 
     public CaptureOverlay(DesktopFrame frame, bool position = true)
     {
-        _frame = frame; Title = "LinkLab 区域截图"; WindowStyle = WindowStyle.None; ResizeMode = ResizeMode.NoResize;
+        _frame = frame; Title = "设备联调工具 · 区域截图"; WindowStyle = WindowStyle.None; ResizeMode = ResizeMode.NoResize;
         Topmost = true; ShowInTaskbar = false; Background = Brushes.Black; Cursor = Cursors.Cross;
         WindowStartupLocation = WindowStartupLocation.Manual; Width = frame.Width; Height = frame.Height;
         SetResourceReference(ForegroundProperty, "Text");

@@ -148,7 +148,7 @@ public sealed class QuickVm : PageVm
     private void CopyText(string text) { if (string.IsNullOrEmpty(text)) throw new InvalidOperationException("没有可复制的文字。"); Clipboard.SetText(text); Status = "文字已复制到剪贴板"; }
     private void SaveImage(BitmapSource image)
     {
-        var dialog = new SaveFileDialog { Filter = "PNG 图片|*.png", FileName = $"LinkLab-{DateTime.Now:yyyyMMdd-HHmmss}.png" };
+        var dialog = new SaveFileDialog { Filter = "PNG 图片|*.png", FileName = $"设备联调工具-{DateTime.Now:yyyyMMdd-HHmmss}.png" };
         if (dialog.ShowDialog() == true) { File.WriteAllBytes(dialog.FileName, DesktopCapture.Png(image)); Status = "截图已保存到 " + dialog.FileName; }
     }
     private void OpenImage()

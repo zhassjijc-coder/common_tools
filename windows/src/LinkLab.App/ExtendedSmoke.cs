@@ -52,8 +52,8 @@ internal static class ExtendedSmoke
         using (var dc = drawing.RenderOpen())
         {
             dc.DrawRectangle(Brushes.White, null, new Rect(0, 0, 1000, 450));
-            dc.DrawText(new FormattedText("LinkLab MQTT 12345", CultureInfo.InvariantCulture, FlowDirection.LeftToRight, new Typeface("Segoe UI"), 52, Brushes.Black, 1), new Point(48, 55));
-            dc.DrawText(new FormattedText("连接实验室 设备调试", CultureInfo.GetCultureInfo("zh-CN"), FlowDirection.LeftToRight, new Typeface("Microsoft YaHei"), 46, Brushes.Black, 1), new Point(48, 145));
+            dc.DrawText(new FormattedText("MQTT Debug 12345", CultureInfo.InvariantCulture, FlowDirection.LeftToRight, new Typeface("Segoe UI"), 52, Brushes.Black, 1), new Point(48, 55));
+            dc.DrawText(new FormattedText("设备联调工具 通信调试", CultureInfo.GetCultureInfo("zh-CN"), FlowDirection.LeftToRight, new Typeface("Microsoft YaHei"), 46, Brushes.Black, 1), new Point(48, 145));
             dc.DrawText(new FormattedText("Temperature: 23.5 C", CultureInfo.InvariantCulture, FlowDirection.LeftToRight, new Typeface("Segoe UI"), 36, Brushes.Black, 1), new Point(48, 235));
         }
         var sample = new RenderTargetBitmap(1000, 450, 96, 96, PixelFormats.Pbgra32); sample.Render(drawing); sample.Freeze(); vm.Quick.SetImage(sample);

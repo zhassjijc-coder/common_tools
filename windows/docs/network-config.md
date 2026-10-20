@@ -1,6 +1,6 @@
 **简体中文** | [English](network-config.en.md)
 
-# 网口配置软件
+# 设备联调工具 · 网口配置软件
 
 此模块参考卓岚 VirCom 的设备管理流程，按厂家公开的 [UDP 管理端口协议](https://www.zlmcu.com/download/UDP_port_protocol.pdf)独立实现，不依赖参考程序或厂商 DLL。管理通信使用 UDP 1092，和“TCP / UDP”模块的数据收发连接独立。
 

@@ -1,10 +1,10 @@
 **简体中文** | [English](README.en.md) · [仓库首页](../README.md)
 
-# LinkLab 1.0 · Python Qt
+# 设备联调工具｜串口、Modbus、PLC、MQTT 调试工具箱
 
-面向 Ubuntu 的 LinkLab，使用 **Python + PySide6 / Qt Widgets** 实现，也可在 Windows 上运行。默认白色主题，可切换深色；系统配置固定在侧栏底部。串口、Modbus 和 PLC 协议使用独立实现，MQTT 使用 Eclipse Paho；不依赖 HslCommunication 或付费厂家 DLL。
+**设备联调工具**的 Python Qt 版，面向 Ubuntu，使用 **Python + PySide6 / Qt Widgets** 实现，也可在 Windows 上运行。当前版本 **1.0**。默认白色主题，可切换深色；系统配置固定在侧栏底部。串口、Modbus 和 PLC 协议使用独立实现，MQTT 使用 Eclipse Paho；不依赖 HslCommunication 或付费厂家 DLL。
 
-![工作台](docs/images/home.png)
+![设备联调工具 · Python Qt 工作台](docs/images/home.png)
 
 ## 功能
 
@@ -24,15 +24,15 @@
 <details>
 <summary>界面展示</summary>
 
-![PLC](docs/images/plc.png)
+![设备联调工具 · Python Qt PLC 客户端](docs/images/plc.png)
 
-![PLC 服务器 / 模拟内存](docs/images/plc-server.png)
+![设备联调工具 · Python Qt PLC 服务器 / 模拟内存](docs/images/plc-server.png)
 
-![MQTT](docs/images/mqtt.png)
+![设备联调工具 · Python Qt MQTT 调试](docs/images/mqtt.png)
 
-![网口配置演示数据，未写设备](docs/images/network-config.png)
+![设备联调工具 · Python Qt 网口配置演示数据，未写设备](docs/images/network-config.png)
 
-![截图编辑](docs/images/capture-editor.png)
+![设备联调工具 · Python Qt 截图编辑](docs/images/capture-editor.png)
 
 </details>
 
@@ -74,7 +74,7 @@ Windows 源码测试使用 Python 3.10–3.13：
 - **PLC 工作角色**：顶部下拉选择“客户端 / 监视”或“服务器 / 模拟内存”。服务端模式中设置监听 IP 和端口，点击“启动服务器”，再读写模拟内存；切回客户端可连接同一模拟器。切换角色不会自动启动通信，转到服务端时会停止客户端连续监视。
 - **连接 PLC**：客户端点击“连接 PLC”后才检查真实连接，S7/FINS 验证协议握手，MC 3E 显示 TCP 连通状态。连接失败会在连接区域提示目标地址及原因，可调整超时后重试；连接检查不读写设备内存。修改连接参数会释放旧连接，也可直接执行一次读写并按需连接。
 - **无硬件联调**：PLC 页面选择协议后点“本机联调”。Modbus 页面先启动本机 TCP 模拟，再让主站连接对应端口。TCP 服务器与 UDP 默认向现有目标发送，避免两个开启回显的端点相互循环。
-- **截图**：系统配置中开启当前截图热键，F1 框选，拖动选区或控制点，滚轮缩放、空格/中键平移；T 文字、R 矩形、S 正方形，颜色可切换。复制/保存/贴图包含标注，OCR 识别原始选区。F3 贴图后滚轮缩放、Ctrl+滚轮调透明度。
+- **截图**：系统配置中开启当前截图热键，F1 支持多屏及不同缩放比例下的跨屏框选，拖动选区或控制点，滚轮缩放、空格/中键平移；T 文字、R 矩形、S 正方形，颜色可切换。Windows 按屏幕原生像素导出，修改显示器布局会取消当前截图。复制/保存/贴图包含标注，OCR 识别原始选区。F3 贴图后滚轮缩放、Ctrl+滚轮调透明度。
 - **桌面差异**：F1/F3 支持 Windows 和 X11，并检测占用；Wayland 下不绕过系统限制。全局键或屏幕读取不可用时，页面会提示，可使用系统截图，再从剪贴板贴图或打开图片进行 OCR。Ubuntu 托盘图标是否显示取决于桌面扩展。
 - **OCR**：Ubuntu 使用本机 Tesseract 可执行文件及语言包；Windows 可使用本机安装的 Tesseract，或同仓库 Windows 版中的原生 DLL 与模型。图像不上传。
 - **MQTT**：需要外部 Broker；TLS 使用系统信任链或指定 CA，双向认证用 PEM 证书/私钥，不导入 PFX。模板不保存连接密码或私钥密码。

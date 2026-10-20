@@ -17,7 +17,7 @@ from .mqtt_page import MqttPage
 from .netconfig_page import NetConfigPage
 from .settings_page import SettingsPage
 from ..services.hub import Hub
-from .. import __version__
+from .. import APP_NAME, APP_SUBTITLE, APP_TITLE, __version__
 
 
 MODULES = [
@@ -129,7 +129,7 @@ class MainWindow(QMainWindow):
         self._closing = self._closed = False
         self.dark = False
         self.hub = Hub(self)
-        self.setWindowTitle("LinkLab / 连接实验室 · Python Qt 1.0")
+        self.setWindowTitle(f"{APP_TITLE} · Python Qt {__version__}")
         self.setWindowIcon(graphic("diamond", "#405cf5"))
         self.setMinimumSize(1000, 680)
         available = QApplication.primaryScreen().availableGeometry()
@@ -144,10 +144,10 @@ class MainWindow(QMainWindow):
         header.setObjectName("header")
         header_layout = QHBoxLayout(header)
         header_layout.setContentsMargins(25, 16, 25, 16)
-        brand = QLabel("◇  LinkLab")
+        brand = QLabel(f"◇  {APP_NAME}")
         brand.setObjectName("brand")
         header_layout.addWidget(brand)
-        sub = QLabel(" /  连接实验室")
+        sub = QLabel("｜" + APP_SUBTITLE)
         sub.setObjectName("muted")
         header_layout.addWidget(sub)
         header_layout.addStretch()
@@ -190,7 +190,7 @@ class MainWindow(QMainWindow):
         rule.setFrameShape(QFrame.Shape.HLine)
         navigation.addWidget(rule)
         navigation.addWidget(self.nav_buttons["settings"])
-        footer = QLabel(f"本地设备 · 本地数据\n\nLINKLAB  /  {__version__}")
+        footer = QLabel(f"本地设备 · 本地数据\n\n{APP_NAME}  /  {__version__}")
         footer.setObjectName("muted")
         navigation.addWidget(footer)
         split.addWidget(sidebar)
@@ -220,9 +220,9 @@ class MainWindow(QMainWindow):
         self.tray = None
         if not test_mode and QSystemTrayIcon.isSystemTrayAvailable():
             self.tray = QSystemTrayIcon(self.windowIcon(), self)
-            self.tray.setToolTip("LinkLab · 连接实验室")
+            self.tray.setToolTip(APP_TITLE)
             menu = QMenu()
-            for title, callback in (("打开 LinkLab", self.show_main), ("截图", self.settings.controller.capture),
+            for title, callback in ((f"打开{APP_NAME}", self.show_main), ("截图", self.settings.controller.capture),
                                     ("贴图", self.settings.controller.pin_clipboard), ("系统配置", self.open_settings), ("退出", self.close)):
                 action = QAction(title, menu)
                 action.triggered.connect(callback)

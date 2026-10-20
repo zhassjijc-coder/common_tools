@@ -7,6 +7,7 @@ from pathlib import Path
 import subprocess
 import sys
 import uuid
+from .. import APP_NAME, APP_SUBTITLE
 
 
 class SettingsStore:
@@ -107,7 +108,7 @@ class AutostartService:
                 return
             self.desktop_path.parent.mkdir(parents=True, exist_ok=True)
             command = " ".join(self._argument(item) for item in self.command())
-            content = "[Desktop Entry]\nType=Application\nName=LinkLab\nComment=LinkLab device tools\nExec=" + command + "\nTerminal=false\nStartupNotify=false\nX-GNOME-Autostart-enabled=true\n"
+            content = f"[Desktop Entry]\nType=Application\nName={APP_NAME}\nComment={APP_SUBTITLE}\nExec=" + command + "\nTerminal=false\nStartupNotify=false\nX-GNOME-Autostart-enabled=true\n"
             self.desktop_path.write_text(content, encoding="utf-8")
         else:
             raise RuntimeError("当前平台暂未实现后台自启动")

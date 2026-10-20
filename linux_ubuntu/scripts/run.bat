@@ -36,10 +36,10 @@ pause
 exit /b 1
 
 :help
-echo LinkLab 1.0 - Windows launcher for the Python Qt edition
+echo Device Debug Tools 1.0 - Windows launcher for the Python Qt edition
 echo.
 echo Double-click run.bat, or run it from any CMD directory.
-echo   run.bat                Open LinkLab without a console window.
+echo   run.bat                Open Device Debug Tools without a console window.
 echo   run.bat --background   Start in the tray when available.
 echo   run.bat --debug        Keep Python errors visible in this console.
 exit /b 0

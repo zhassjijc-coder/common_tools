@@ -165,7 +165,7 @@ public sealed class NetworkConfigVm : PageVm
     private sealed record Profile(int FormatVersion, NetworkDeviceSettings Settings);
     private void Export()
     {
-        var dialog = new SaveFileDialog { Filter = "LinkLab 网口参数模板|*.json", FileName = "network-device.json" };
+        var dialog = new SaveFileDialog { Filter = "设备联调工具网口参数模板|*.json", FileName = "设备联调工具-网口参数.json" };
         var settings = Settings(); if (dialog.ShowDialog() != true) return;
         File.WriteAllText(dialog.FileName, JsonSerializer.Serialize(new Profile(1, settings), new JsonSerializerOptions { WriteIndented = true }), Encoding.UTF8);
         Status = "已导出参数模板，不包含设备身份、原始报文或密码。";
@@ -173,7 +173,7 @@ public sealed class NetworkConfigVm : PageVm
     private void Import()
     {
         if (Selected is null) throw new InvalidOperationException("请先选择目标设备，再载入参数模板。");
-        var dialog = new OpenFileDialog { Filter = "LinkLab 网口参数模板|*.json" }; if (dialog.ShowDialog() != true) return;
+        var dialog = new OpenFileDialog { Filter = "设备联调工具网口参数模板|*.json" }; if (dialog.ShowDialog() != true) return;
         if (new FileInfo(dialog.FileName).Length > 65536) throw new IOException("参数模板文件过大。");
         var profile = JsonSerializer.Deserialize<Profile>(File.ReadAllText(dialog.FileName));
         if (profile is null || profile.FormatVersion != 1 || profile.Settings is null) throw new IOException("参数模板格式不受支持。");

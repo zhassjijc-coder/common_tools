@@ -1,6 +1,6 @@
 [简体中文](network-config.md) | **English**
 
-# Device network configuration
+# Device Debug Tools · Device network configuration
 
 This module follows the device-management workflow of ZLAN VirCom and independently implements the vendor's published [UDP management-port protocol](https://www.zlmcu.com/download/UDP_port_protocol.pdf). It does not depend on the reference application or vendor DLLs. Management traffic uses UDP 1092, separately from data connections in the TCP / UDP module.
 

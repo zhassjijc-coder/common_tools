@@ -47,7 +47,7 @@ public partial class App : Application
         DispatcherUnhandledException += (_, args) =>
         {
             if (verification) { args.Handled = true; File.WriteAllText(Path.Combine(output!, "failure.txt"), args.Exception.ToString()); Shutdown(1); }
-            else { WriteCrash(args.Exception); MessageBox.Show("应用遇到了未处理错误，详情已写入本地 LinkLab/crash.log。\n" + args.Exception.Message, "LinkLab", MessageBoxButton.OK, MessageBoxImage.Error); }
+            else { WriteCrash(args.Exception); MessageBox.Show("应用遇到了未处理错误，详情已写入 %LOCALAPPDATA%\\LinkLab\\crash.log。\n" + args.Exception.Message, "设备联调工具", MessageBoxButton.OK, MessageBoxImage.Error); }
         };
         try
         {
@@ -142,7 +142,7 @@ public partial class App : Application
         catch (Exception ex)
         {
             if (verification) File.WriteAllText(Path.Combine(output!, "failure.txt"), ex.ToString());
-            else { WriteCrash(ex); MessageBox.Show(ex.Message, "LinkLab 启动失败", MessageBoxButton.OK, MessageBoxImage.Error); }
+            else { WriteCrash(ex); MessageBox.Show(ex.Message, "设备联调工具 · 启动失败", MessageBoxButton.OK, MessageBoxImage.Error); }
             Shutdown(1);
         }
     }

@@ -9,17 +9,18 @@ import sys
 from PySide6.QtCore import QTimer
 from PySide6.QtNetwork import QLocalServer, QLocalSocket
 from PySide6.QtWidgets import QApplication
-from . import __version__
+from . import APP_TITLE, __version__
 from .ui.theme import configure_font, stylesheet
 
 
 def main(argv=None):
-    parser = argparse.ArgumentParser(description="LinkLab 1.0 / Python Qt")
+    parser = argparse.ArgumentParser(description=f"{APP_TITLE} · Python Qt {__version__}")
     parser.add_argument("--background", action="store_true", help="start in tray when available")
     parser.add_argument("--smoke-test", metavar="OUTPUT", help="run isolated Qt UI verification and exit")
     args = parser.parse_args(argv)
     app = QApplication.instance() or QApplication(sys.argv[:1])
     app.setApplicationName("LinkLabQt")
+    app.setApplicationDisplayName(APP_TITLE)
     app.setApplicationVersion(__version__)
     app.setOrganizationName("LinkLab")
     configure_font(app)

@@ -20,14 +20,14 @@ internal sealed class DesktopLifetime : IDisposable
         _vm = vm; _window = window; _activate = activate;
         _icon = Icon.ExtractAssociatedIcon(Path.Combine(AppContext.BaseDirectory, "LinkLab.exe")) ?? (Icon)SystemIcons.Application.Clone();
         _menu = new Forms.ContextMenuStrip();
-        _menu.Items.Add("打开 LinkLab", null, (_, _) => ShowMain());
+        _menu.Items.Add("打开设备联调工具", null, (_, _) => ShowMain());
         _menu.Items.Add("系统配置", null, (_, _) => { _vm.Navigate("quick"); ShowMain(); });
         var capture = new Forms.ToolStripMenuItem("启用截图快捷键") { CheckOnClick = false };
         capture.Click += (_, _) => { if (_window.IsEnabled) _vm.Quick.Enabled = !_vm.Quick.Enabled; };
         _menu.Items.Add(capture); _menu.Items.Add(new Forms.ToolStripSeparator());
-        _menu.Items.Add("退出 LinkLab", null, (_, _) => Exit());
+        _menu.Items.Add("退出设备联调工具", null, (_, _) => Exit());
         _menu.Opening += (_, _) => { capture.Checked = _vm.Quick.Enabled; capture.Enabled = _window.IsEnabled; };
-        _tray = new Forms.NotifyIcon { Icon = _icon, Text = "LinkLab · 连接实验室", ContextMenuStrip = _menu, Visible = true };
+        _tray = new Forms.NotifyIcon { Icon = _icon, Text = "设备联调工具｜串口、Modbus、PLC、MQTT 调试工具箱", ContextMenuStrip = _menu, Visible = true };
         _tray.DoubleClick += (_, _) => ShowMain();
         _window.Closed += OnClosed;
         _vm.Quick.PropertyChanged += CaptureChanged;
@@ -56,7 +56,7 @@ internal sealed class DesktopLifetime : IDisposable
     private void UpdateTooltip()
     {
         if (_disposed) return;
-        _tray.Text = _vm.Quick.Enabled ? "LinkLab · F1 截图 / F3 贴图" : "LinkLab · 截图已关闭，双击打开主界面";
+        _tray.Text = _vm.Quick.Enabled ? "设备联调工具 · F1 截图 / F3 贴图" : "设备联调工具 · 截图已关闭，双击打开主界面";
     }
     private void OnClosed(object? sender, EventArgs e) => Dispose();
     public void Dispose()

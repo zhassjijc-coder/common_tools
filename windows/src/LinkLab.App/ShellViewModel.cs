@@ -62,7 +62,7 @@ public sealed class ShellViewModel : Observable
     public int ToolCount => Navigation.Count - 1;
     public NavigationItem? SelectedModule { get => IsSettingsSelected ? null : SelectedNav; set { if (value is not null) SelectedNav = value; } }
     public bool IsSettingsSelected => SelectedNav.Key == "quick";
-    public string VersionLabel => "LINKLAB  /  " + (typeof(App).Assembly.GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion.Split('+')[0] ?? "1.0");
+    public string VersionLabel => "设备联调工具  /  " + (typeof(App).Assembly.GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion.Split('+')[0] ?? "1.0");
     private NavigationItem _selected = null!;
     public NavigationItem SelectedNav { get => _selected; set { if (value is not null && Set(ref _selected, value)) { Raise(nameof(CurrentPage)); Raise(nameof(CurrentTitle)); Raise(nameof(CurrentSubtitle)); Raise(nameof(IsSettingsSelected)); Raise(nameof(SelectedModule)); if (value.Key == "virtualserial") VirtualSerial.RefreshCommand.Execute(null); } } }
     public object CurrentPage => SelectedNav.Key switch { "serial" => Serial, "network" => Network, "netconfig" => NetworkConfig, "master" => Master, "simulator" => Simulator, "workbench" => Workbench, "monitor" => Monitor, "plc" => Plc, "mqtt" => Mqtt, "quick" => Quick, "virtualserial" => VirtualSerial, _ => Home };

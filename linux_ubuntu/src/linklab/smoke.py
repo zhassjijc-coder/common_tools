@@ -11,6 +11,7 @@ from PySide6.QtWidgets import QComboBox, QScrollArea
 from .ui.main_window import MainWindow, MODULES
 from .capture.editor import CaptureOverlay, DesktopFrame
 from .protocols.zlan import DeviceSettings, DeviceSnapshot
+from . import APP_NAME
 
 
 def run(app, output: Path):
@@ -65,7 +66,7 @@ def run(app, output: Path):
         painter.setPen(QColor("#22354c"))
         font = QFont(app.font()); font.setPixelSize(30)
         painter.setFont(font)
-        painter.drawText(75, 115, "LinkLab / 设备调试记录")
+        painter.drawText(75, 115, APP_NAME + " / 设备调试记录")
         font.setPixelSize(20); painter.setFont(font)
         painter.drawText(75, 180, "Modbus TCP  ·  127.0.0.1:1502")
         painter.drawText(75, 230, "RX  01 03 06 08 FC 04 D2 16 2E")

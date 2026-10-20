@@ -5,19 +5,14 @@ from dataclasses import dataclass, replace
 import math
 import threading
 
-from PySide6.QtCore import QObject, QPoint, QPointF, QRect, QRectF, QSizeF, Qt, QTimer, Signal
+from PySide6.QtCore import QObject, QPoint, QPointF, QRect, QRectF, QSignalBlocker, QSizeF, Qt, QTimer, Signal
 from PySide6.QtGui import QColor, QFont, QGuiApplication, QImage, QKeyEvent, QMouseEvent, QPainter, QPainterPath, QPalette, QPen, QTextCharFormat, QTextCursor, QTextDocument, QWheelEvent
 from PySide6.QtWidgets import QApplication, QFileDialog, QFrame, QHBoxLayout, QLabel, QPushButton, QScrollArea, QSpinBox, QStyle, QTextEdit, QVBoxLayout, QWidget
 
 from .hotkeys import GlobalHotkeys
+from .desktop import CaptureScreen, DesktopFrame, capture_desktop, desktop_cursor_position
 from . import ocr
-
-
-@dataclass
-class DesktopFrame:
-    image: QImage
-    geometry: QRect
-    screens: tuple[tuple[QRect, QImage], ...] = ()
+from .. import APP_NAME
 
 
 @dataclass
@@ -28,6 +23,7 @@ class Mark:
     text: str = ""
     font_size: int = 20
     wrap_width: float = 300
+    stroke_width: float = 2
 
     def clone(self):
         return replace(self, rect=QRectF(self.rect))
@@ -56,41 +52,9 @@ def _draw_mark(painter: QPainter, mark: Mark) -> None:
         _document(mark).drawContents(painter)
         painter.restore()
     else:
-        painter.setPen(QPen(QColor(mark.color), 2))
+        painter.setPen(QPen(QColor(mark.color), mark.stroke_width))
         painter.setBrush(Qt.BrushStyle.NoBrush)
         painter.drawRect(mark.rect)
-
-
-def capture_desktop() -> DesktopFrame:
-    screens = QGuiApplication.screens()
-    if not screens:
-        raise RuntimeError("没有可读取的桌面屏幕")
-    geometry = QRect()
-    for screen in screens:
-        geometry = geometry.united(screen.geometry())
-    ratio = max(screen.devicePixelRatio() for screen in screens)
-    mixed_dpi = max(screen.devicePixelRatio() for screen in screens) - min(screen.devicePixelRatio() for screen in screens) > .001
-    native_parts = []
-    width, height = math.ceil(geometry.width() * ratio), math.ceil(geometry.height() * ratio)
-    if width * height > 100_000_000:
-        raise RuntimeError("屏幕尺寸超过 1 亿像素，请减少连接的显示器或使用系统截图")
-    image = QImage(width, height, QImage.Format.Format_ARGB32_Premultiplied)
-    image.fill(Qt.GlobalColor.black)
-    painter = QPainter(image)
-    try:
-        for screen in screens:
-            snapshot = screen.grabWindow(0).toImage()
-            if snapshot.isNull():
-                raise RuntimeError("系统拒绝读取屏幕。Wayland 下请使用系统截图后打开图片或从剪贴板贴图。")
-            rect = screen.geometry()
-            if mixed_dpi:
-                snapshot.setDevicePixelRatio(1)
-                native_parts.append((QRect(rect), snapshot))
-            target = QRectF((rect.x() - geometry.x()) * ratio, (rect.y() - geometry.y()) * ratio, rect.width() * ratio, rect.height() * ratio)
-            painter.drawImage(target, snapshot)
-    finally:
-        painter.end()
-    return DesktopFrame(image, geometry, tuple(native_parts))
 
 
 class _TextInput(QTextEdit):
@@ -109,9 +73,15 @@ class _TextInput(QTextEdit):
 class CaptureOverlay(QWidget):
     completed = Signal(object, object, str)
 
-    def __init__(self, frame: DesktopFrame, parent=None):
+    def __init__(self, frame: DesktopFrame, parent=None, *, viewport: CaptureScreen | None = None):
         super().__init__(parent, Qt.WindowType.FramelessWindowHint | Qt.WindowType.WindowStaysOnTopHint | Qt.WindowType.Tool)
         self.frame = frame
+        self.session: CaptureSession | None = None
+        self.viewport = viewport
+        self._view_rect = QRectF(viewport.scene_rect) if viewport else QRectF(QPointF(), QSizeF(frame.geometry.size()))
+        geometry = viewport.geometry if viewport else frame.geometry
+        self._view_sx = geometry.width() / self._view_rect.width()
+        self._view_sy = geometry.height() / self._view_rect.height()
         self.selection = QRectF()
         self.marks: list[Mark] = []
         self.history: list[tuple[QRectF, list[Mark]]] = []
@@ -132,10 +102,15 @@ class CaptureOverlay(QWidget):
         self._editor: _TextInput | None = None
         self._editing = -1
         self._text_point = QPointF()
-        self.setGeometry(frame.geometry)
+        self._text_font_size = 20
+        self._text_wrap = 300.0
+        if viewport and viewport.screen is not None:
+            self.winId()
+            self.windowHandle().setScreen(viewport.screen)
+        self.setGeometry(geometry)
         self.setMouseTracking(True)
         self.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
-        self.setWindowTitle("LinkLab 区域截图")
+        self.setWindowTitle(f"{APP_NAME} · 区域截图")
         self._tips = QLabel("拖动选择区域 · 滚轮缩放 · 空格拖动 / 中键平移 · Enter 复制 · Esc 取消", self)
         self._tips.setStyleSheet("background:white;color:#24334a;padding:10px;border-radius:6px;")
         self._tips.adjustSize()
@@ -249,6 +224,7 @@ class CaptureOverlay(QWidget):
     def set_font_size(self, size):
         self.font_size = int(size)
         if self._editor:
+            self._text_font_size = round(size / self._view_sx)
             font = self._editor.font()
             font.setPixelSize(round(size * self.zoom))
             self._editor.setFont(font)
@@ -256,30 +232,46 @@ class CaptureOverlay(QWidget):
         elif 0 <= self.selected < len(self.marks) and self.marks[self.selected].kind == "text":
             self.save_state()
             mark = self.marks[self.selected]
-            mark.font_size = size
+            mark.font_size = round(size / self._view_sx)
             mark.rect.setSize(_document(mark).size())
         self._update_ui()
 
     def _screen(self, point):
-        return point * self.zoom + self.pan
+        point = point * self.zoom + self.pan - self._view_rect.topLeft()
+        return QPointF(point.x() * self._view_sx, point.y() * self._view_sy)
+
+    def _display_point(self, point):
+        return QPointF(point.x() / self._view_sx, point.y() / self._view_sy) + self._view_rect.topLeft()
 
     def _world(self, point):
-        return (point - self.pan) / self.zoom
+        return (self._display_point(point) - self.pan) / self.zoom
+
+    def _event_point(self, event):
+        if self.session:
+            # A drag remains grabbed by its starting window. Global native cursor
+            # coordinates avoid Qt converting a neighbouring monitor's DPI twice.
+            return desktop_cursor_position() - QPointF(self.frame.geometry.topLeft())
+        return self._display_point(event.position())
+
+    def _event_world(self, event):
+        return (self._event_point(event) - self.pan) / self.zoom
 
     def _clamp(self, point):
         return QPointF(max(0, min(point.x(), self.scene_size.width())), max(0, min(point.y(), self.scene_size.height())))
 
     def _limit_pan(self):
         w, h = self.scene_size.width() * self.zoom, self.scene_size.height() * self.zoom
-        self.pan.setX((self.width() - w) / 2 if w <= self.width() else max(self.width() - w, min(0, self.pan.x())))
-        self.pan.setY((self.height() - h) / 2 if h <= self.height() else max(self.height() - h, min(0, self.pan.y())))
+        width = self.scene_size.width() if self.session else self.width()
+        height = self.scene_size.height() if self.session else self.height()
+        self.pan.setX((width - w) / 2 if w <= width else max(width - w, min(0, self.pan.x())))
+        self.pan.setY((height - h) / 2 if h <= height else max(height - h, min(0, self.pan.y())))
 
     def set_zoom(self, zoom, anchor=None):
         self.commit_text()
         anchor = anchor or QPointF(self.width() / 2, self.height() / 2)
         world = self._world(anchor)
         self.zoom = max(.25, min(8., float(zoom)))
-        self.pan = anchor - world * self.zoom
+        self.pan = self._display_point(anchor) - world * self.zoom
         self._limit_pan()
         self._update_ui()
 
@@ -318,7 +310,7 @@ class CaptureOverlay(QWidget):
         rect = QRectF(anchor, end).normalized()
         if rect.width() >= 2 and rect.height() >= 2 and len(self.marks) < 500:
             self.save_state()
-            self.marks.append(Mark("rect", rect, color or self.color))
+            self.marks.append(Mark("rect", rect, color or self.color, stroke_width=2 / self._view_sx))
             self.selected = len(self.marks) - 1
             self._update_ui()
 
@@ -330,8 +322,12 @@ class CaptureOverlay(QWidget):
         self._editing = index
         self._text_point = QPointF(point)
         if mark:
-            self.color, self.font_size = mark.color, mark.font_size
-        wrap = mark.wrap_width if mark else max(2, min(300, self.selection.width() - point.x()))
+            self.color, self.font_size = mark.color, round(mark.font_size * self._view_sx)
+        wrap = mark.wrap_width if mark else max(2, min(300 / self._view_sx, self.selection.width() - point.x()))
+        # Keep native font/wrap values through an unchanged re-edit. Rounding
+        # them to a different monitor's logical pixels must not alter the export.
+        self._text_font_size = mark.font_size if mark else round(self.font_size / self._view_sx)
+        self._text_wrap = wrap
         editor = _TextInput(self)
         self._editor = editor
         editor.setAcceptRichText(False)
@@ -342,11 +338,11 @@ class CaptureOverlay(QWidget):
         editor.setFont(font)
         editor.setPlainText(mark.text if mark else "")
         location = self._screen(self.selection.topLeft() + point)
-        width = math.ceil(wrap * self.zoom) + editor.style().pixelMetric(QStyle.PixelMetric.PM_ScrollBarExtent) + 4
-        height = max(round(self.font_size * self.zoom) + 12, min(180, round((self.selection.height() - point.y()) * self.zoom)))
+        width = math.ceil(wrap * self.zoom * self._view_sx) + editor.style().pixelMetric(QStyle.PixelMetric.PM_ScrollBarExtent) + 4
+        height = max(round(self.font_size * self.zoom) + 12, min(180, round((self.selection.height() - point.y()) * self.zoom * self._view_sy)))
         editor.setGeometry(round(location.x()), round(location.y()), width, height)
         editor.show()
-        editor.resize(editor.width() + round(wrap * self.zoom) - editor.viewport().width(), editor.height())
+        editor.resize(editor.width() + round(wrap * self.zoom * self._view_sx) - editor.viewport().width(), editor.height())
         self.set_color(self.color)
         editor.accepted.connect(self.commit_text)
         editor.canceled.connect(self.cancel_text)
@@ -358,13 +354,13 @@ class CaptureOverlay(QWidget):
         if not self._editor:
             return
         editor, index = self._editor, self._editing
-        text, wrap = editor.toPlainText(), editor.viewport().width() / self.zoom
+        text, wrap = editor.toPlainText(), self._text_wrap
         self._editor, self._editing = None, -1
         editor.hide()
         editor.deleteLater()
         if text.strip():
             self.save_state()
-            mark = Mark("text", QRectF(self._text_point, QSizeF(1, 1)), self.color, text, self.font_size, wrap)
+            mark = Mark("text", QRectF(self._text_point, QSizeF(1, 1)), self.color, text, self._text_font_size, wrap)
             mark.rect.setSize(_document(mark).size())
             if index >= 0:
                 self.marks[index] = mark
@@ -421,7 +417,7 @@ class CaptureOverlay(QWidget):
         self.completed.emit(image, original, action)
 
     def _edge_at(self, point):
-        rect, gap = self.selection, 7 / self.zoom
+        rect, gap = self.selection, 7 / (self.zoom * self._view_sx)
         if rect.isEmpty() or not rect.adjusted(-gap, -gap, gap, gap).contains(point):
             return ""
         result = "l" if abs(point.x() - rect.left()) <= gap else "r" if abs(point.x() - rect.right()) <= gap else ""
@@ -436,6 +432,8 @@ class CaptureOverlay(QWidget):
         return -1
 
     def mousePressEvent(self, event: QMouseEvent):
+        if self.session:
+            self.session.activate(self)
         if event.button() == Qt.MouseButton.RightButton:
             if self._editor:
                 self.cancel_text()
@@ -451,11 +449,12 @@ class CaptureOverlay(QWidget):
             return
         self.commit_text()
         if event.button() == Qt.MouseButton.MiddleButton or (event.button() == Qt.MouseButton.LeftButton and self._space):
-            self._drag, self._pan_origin, self._pan_before = "pan", event.position(), QPointF(self.pan)
+            self._drag, self._pan_origin, self._pan_before = "pan", self._event_point(event), QPointF(self.pan)
+            self._update_ui()
             return
         if event.button() != Qt.MouseButton.LeftButton:
             return
-        point = self._clamp(self._world(event.position()))
+        point = self._clamp(self._event_world(event))
         self._origin, self._origin_rect = point, QRectF(self.selection)
         self.selected = -1
         self._edge = self._edge_at(point)
@@ -484,7 +483,9 @@ class CaptureOverlay(QWidget):
         self._update_ui()
 
     def mouseDoubleClickEvent(self, event):
-        point = self._world(event.position())
+        if self.session:
+            self.session.activate(self)
+        point = self._event_world(event)
         if self.mode == "move" and self.selection.contains(point):
             index = self._mark_at(point - self.selection.topLeft())
             if index >= 0 and self.marks[index].kind == "text":
@@ -492,10 +493,10 @@ class CaptureOverlay(QWidget):
                 self.begin_text(self.marks[index].rect.topLeft(), index)
 
     def mouseMoveEvent(self, event):
-        point = self._clamp(self._world(event.position()))
+        point = self._clamp(self._event_world(event))
         delta = point - self._origin
         if self._drag == "pan":
-            self.pan = self._pan_before + event.position() - self._pan_origin
+            self.pan = self._pan_before + self._event_point(event) - self._pan_origin
             self._limit_pan()
         elif self._drag == "new":
             self.selection = QRectF(self._origin, point).normalized()
@@ -514,7 +515,7 @@ class CaptureOverlay(QWidget):
             if self._drag == "square":
                 side = min(abs(end.x() - anchor.x()), abs(end.y() - anchor.y()))
                 end = QPointF(anchor.x() + math.copysign(side, end.x() - anchor.x()), anchor.y() + math.copysign(side, end.y() - anchor.y()))
-            self._pending = Mark("rect", QRectF(anchor, end).normalized(), self.color)
+            self._pending = Mark("rect", QRectF(anchor, end).normalized(), self.color, stroke_width=2 / self._view_sx)
         else:
             edge = self._edge_at(point)
             cursor = Qt.CursorShape.SizeFDiagCursor if edge in ("lt", "rb") else Qt.CursorShape.SizeBDiagCursor if edge in ("lb", "rt") else Qt.CursorShape.SizeHorCursor if edge in ("l", "r") else Qt.CursorShape.SizeVerCursor if edge else Qt.CursorShape.IBeamCursor if self.mode == "text" else Qt.CursorShape.SizeAllCursor if self.selection.contains(point) else Qt.CursorShape.CrossCursor
@@ -529,8 +530,12 @@ class CaptureOverlay(QWidget):
             self.selected = len(self.marks) - 1
         self._pending, self._drag = None, ""
         self._update_ui()
+        if self.session:
+            self.session.activate_at(self._event_point(event))
 
     def wheelEvent(self, event: QWheelEvent):
+        if self.session:
+            self.session.activate(self)
         self.set_zoom(self.zoom * (1.2 if event.angleDelta().y() > 0 else 1 / 1.2), event.position())
         event.accept()
 
@@ -544,6 +549,7 @@ class CaptureOverlay(QWidget):
             self.finish("pin")
         elif key == Qt.Key.Key_Space:
             self._space = True
+            self._update_ui()
         elif control and key == Qt.Key.Key_Z:
             self.undo()
         elif control and key == Qt.Key.Key_S:
@@ -562,14 +568,25 @@ class CaptureOverlay(QWidget):
     def keyReleaseEvent(self, event):
         if event.key() == Qt.Key.Key_Space:
             self._space = False
+            self._update_ui()
         super().keyReleaseEvent(event)
 
     def _update_ui(self):
+        if self.session:
+            self.session.sync(self)
+        else:
+            self._refresh_ui()
+
+    def _refresh_ui(self):
         valid = self.selection.width() >= 2 and self.selection.height() >= 2
-        self.toolbar.setVisible(valid and not self._drag)
-        self._size.setVisible(valid)
+        active = not self.session or self.session.active is self
+        self.toolbar.setVisible(valid and not self._drag and active)
+        self._size.setVisible(valid and active)
         self._tips.setVisible(not valid)
         self.zoom_label.setText(f"{self.zoom:.0%}")
+        with QSignalBlocker(self.font_box):
+            self.font_box.setMaximum(max(72, self.font_size))
+            self.font_box.setValue(self.font_size)
         for mode, button in self.tool_buttons.items():
             button.setChecked(self.mode == mode)
         if valid:
@@ -586,6 +603,8 @@ class CaptureOverlay(QWidget):
         painter = QPainter(self)
         painter.fillRect(self.rect(), QColor("#152031"))
         painter.save()
+        painter.scale(self._view_sx, self._view_sy)
+        painter.translate(-self._view_rect.topLeft())
         painter.translate(self.pan)
         painter.scale(self.zoom, self.zoom)
         painter.drawImage(QRectF(QPointF(), self.scene_size), self.frame.image)
@@ -607,19 +626,113 @@ class CaptureOverlay(QWidget):
             if self._pending:
                 _draw_mark(painter, self._pending)
             if 0 <= self.selected < len(self.marks) and self.selected != self._editing:
-                painter.setPen(QPen(QColor("#3065e8"), 1 / self.zoom, Qt.PenStyle.DashLine))
+                painter.setPen(QPen(QColor("#3065e8"), 1 / (self.zoom * self._view_sx), Qt.PenStyle.DashLine))
                 painter.setBrush(Qt.BrushStyle.NoBrush)
                 painter.drawRect(self.marks[self.selected].rect.adjusted(-3, -3, 3, 3))
             painter.restore()
-            painter.setPen(QPen(QColor("#3065e8"), 1.5 / self.zoom))
+            painter.setPen(QPen(QColor("#3065e8"), 1.5 / (self.zoom * self._view_sx)))
             painter.setBrush(Qt.BrushStyle.NoBrush)
             painter.drawRect(self.selection)
             painter.setBrush(Qt.GlobalColor.white)
             rect = self.selection
             for point in (rect.topLeft(), rect.topRight(), rect.bottomLeft(), rect.bottomRight(), QPointF(rect.center().x(), rect.top()), QPointF(rect.center().x(), rect.bottom()), QPointF(rect.left(), rect.center().y()), QPointF(rect.right(), rect.center().y())):
-                size = 6 / self.zoom
+                size = 6 / (self.zoom * self._view_sx)
                 painter.drawRect(QRectF(point.x() - size / 2, point.y() - size / 2, size, size))
         painter.restore()
+
+    def closeEvent(self, event):
+        if self.session:
+            self.session.close()
+        event.accept()
+
+
+class CaptureSession(QObject):
+    """One native window per monitor; selection and edits use a shared canvas."""
+
+    completed = Signal(object, object, str)
+    closed = Signal()
+    active_changed = Signal(object)
+
+    _shared = ("selection", "marks", "history", "zoom", "pan", "mode", "color",
+               "selected", "_drag", "_pending", "_editing", "_space")
+
+    def __init__(self, frame: DesktopFrame, parent=None):
+        super().__init__(parent)
+        self.frame = frame
+        self.windows: list[CaptureOverlay] = []
+        self.active: CaptureOverlay | None = None
+        self._closed = False
+        self._screen_connections = []
+        views = frame.views or (None,)
+        for view in views:
+            window = CaptureOverlay(frame, viewport=view)
+            window.session = self
+            window.setAttribute(Qt.WidgetAttribute.WA_DeleteOnClose)
+            window.completed.connect(self.completed)
+            self.windows.append(window)
+            if view and view.screen is not None:
+                # Cancel a stale capture if the desktop layout changes mid-edit.
+                signal = view.screen.geometryChanged
+                signal.connect(self.close)
+                self._screen_connections.append(signal)
+        app = QGuiApplication.instance()
+        if app is not None and frame.views:
+            for signal in (app.screenRemoved, app.screenAdded):
+                signal.connect(self.close)
+                self._screen_connections.append(signal)
+        self.active = self.windows[0]
+        self.activate_at(desktop_cursor_position() - QPointF(frame.geometry.topLeft()))
+        self.sync(self.active)
+
+    def activate(self, window):
+        if window is self.active:
+            return
+        if self.active:
+            self.active.commit_text()
+            window.font_size = self.active.font_size
+        self.active = window
+        self.active_changed.emit(window)
+        if window.isVisible():
+            window.activateWindow()
+            window.setFocus()
+        for view in self.windows:
+            view._refresh_ui()
+
+    def activate_at(self, point):
+        for window in self.windows:
+            if window._view_rect.contains(point):
+                self.activate(window)
+                return
+
+    def sync(self, source):
+        if self._closed:
+            return
+        for window in self.windows:
+            if window is not source:
+                for name in self._shared:
+                    setattr(window, name, getattr(source, name))
+            window._refresh_ui()
+
+    def show(self):
+        for window in self.windows:
+            window.show()
+        self.active.raise_()
+        self.active.activateWindow()
+        self.active.setFocus()
+
+    def close(self, *_):
+        if self._closed:
+            return
+        self._closed = True
+        for signal in self._screen_connections:
+            try:
+                signal.disconnect(self.close)
+            except (RuntimeError, TypeError):
+                pass  # A removed QScreen may already have destroyed its signals.
+        self._screen_connections.clear()
+        for window in self.windows:
+            window.close()
+        self.closed.emit()
 
 
 class PinnedImageWindow(QWidget):
@@ -628,7 +741,7 @@ class PinnedImageWindow(QWidget):
         self.image = image.copy()
         self.scale = 1.0
         self._drag = None
-        self.setWindowTitle("LinkLab 贴图 · 滚轮缩放 · Ctrl+滚轮透明度")
+        self.setWindowTitle(f"{APP_NAME} · 贴图 · 滚轮缩放 · Ctrl+滚轮透明度")
         self.setStyleSheet("background:white;color:#24334a; QPushButton{background:#f6f8fc;color:#24334a;border:1px solid #dce3ee;border-radius:5px;padding:6px;}")
         layout = QVBoxLayout(self)
         layout.setContentsMargins(5, 5, 5, 5)
@@ -715,6 +828,7 @@ class CaptureController(QObject):
         self._capturing = False
         self._generation = 0
         self._overlay: CaptureOverlay | None = None
+        self._capture_session: CaptureSession | None = None
         self._floating: list[QWidget] = []
         self.last_image = QImage()
         self.original_image = QImage()
@@ -738,7 +852,9 @@ class CaptureController(QObject):
             else:
                 self._generation += 1
                 self.hotkeys.close()
-                if self._overlay:
+                if self._capture_session:
+                    self._capture_session.close()
+                elif self._overlay:
                     self._overlay.close()
             self.enabled = bool(enabled)
             self.enabled_changed.emit(self.enabled)
@@ -775,22 +891,28 @@ class CaptureController(QObject):
                     owner.show()
                 return
             try:
-                self._overlay = CaptureOverlay(capture_desktop())
-                self._overlay.completed.connect(self._completed)
-                self._overlay.destroyed.connect(lambda: None)
+                session = CaptureSession(capture_desktop(), self)
+                self._capture_session = session
+                self._overlay = session.active
+                session.completed.connect(self._completed)
+                session.active_changed.connect(lambda window: setattr(self, "_overlay", window))
 
                 def closed():
                     self._overlay = None
+                    self._capture_session = None
                     self._capturing = False
                     if restore and not self._closed:
                         owner.show()
+                    # The controller may be collected before pending window
+                    # deletions run. Give the closed session a single owner.
+                    session.setParent(None)
+                    session.deleteLater()
 
-                self._overlay.setAttribute(Qt.WidgetAttribute.WA_DeleteOnClose)
-                self._overlay.destroyed.connect(closed)
-                self._overlay.show()
-                self._overlay.activateWindow()
-                self._overlay.setFocus()
+                session.closed.connect(closed)
+                session.show()
             except Exception as exc:
+                if self._capture_session:
+                    self._capture_session.close()
                 self._capturing = False
                 self._notice(str(exc))
                 if restore and not self._closed:
@@ -822,7 +944,7 @@ class CaptureController(QObject):
         if image.isNull():
             self._notice("请先截图或打开图片")
             return
-        filename, _ = QFileDialog.getSaveFileName(None, "保存截图", "LinkLab.png", "PNG 图片 (*.png)")
+        filename, _ = QFileDialog.getSaveFileName(None, "保存截图", f"{APP_NAME}.png", "PNG 图片 (*.png)")
         if filename:
             if not image.save(filename, "PNG"):
                 self._notice("保存图片失败，请检查目录权限")
@@ -841,6 +963,9 @@ class CaptureController(QObject):
 
     def pin_clipboard(self):
         if self._closed:
+            return
+        if self._capture_session:
+            self._capture_session.active.finish("pin")
             return
         if self._overlay:
             self._overlay.finish("pin")
@@ -913,7 +1038,7 @@ class CaptureController(QObject):
         self._notice(f"识别完成：{len(result)} 个字符，可编辑后复制" if result else "没有识别到文字，请选择清晰的文字区域")
         if result and not self.test_mode:
             window = QWidget(None, Qt.WindowType.WindowStaysOnTopHint | Qt.WindowType.Tool)
-            window.setWindowTitle("LinkLab · 文字识别结果")
+            window.setWindowTitle(f"{APP_NAME} · 文字识别结果")
             window.setStyleSheet("background:white;color:#24334a;")
             window.resize(680, 420)
             layout = QVBoxLayout(window)
@@ -935,7 +1060,9 @@ class CaptureController(QObject):
         self._ocr_cancel.set()
         self.hotkeys.close()
         self.enabled = False
-        if self._overlay:
+        if self._capture_session:
+            self._capture_session.close()
+        elif self._overlay:
             self._overlay.close()
         for window in self._floating[:]:
             window.close()

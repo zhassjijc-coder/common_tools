@@ -29,7 +29,7 @@
             <StackPanel Margin="0,0,22,0">
               <TextBlock Text="VIRTUAL SERIAL  /  本机串口实验室" Foreground="{DynamicResource VirtualAccent}" FontSize="10" FontWeight="SemiBold"/>
               <TextBlock Text="一对串口，让收发连起来。" FontSize="24" FontWeight="SemiBold" Margin="0,10,0,10"/>
-              <TextBlock Text="创建 Windows 可识别的 COM 端口对。A 发送、B 接收；B 发送、A 接收，可供 LinkLab 和其他串口软件使用。" Foreground="{DynamicResource Muted}" TextWrapping="Wrap" LineHeight="21"/>
+              <TextBlock Text="创建 Windows 可识别的 COM 端口对。A 发送、B 接收；B 发送、A 接收，可供设备联调工具和其他串口软件使用。" Foreground="{DynamicResource Muted}" TextWrapping="Wrap" LineHeight="21"/>
             </StackPanel>
             <Border Grid.Column="1" Background="{DynamicResource Selected}" CornerRadius="12" Padding="18" VerticalAlignment="Center">
               <StackPanel><TextBlock Text="COM A   ⇄   COM B" FontSize="19" FontWeight="SemiBold" Foreground="{DynamicResource VirtualAccent}" HorizontalAlignment="Center"/><TextBlock Text="主站  →  虚拟连线  →  从站" Foreground="{DynamicResource Muted}" FontSize="11" HorizontalAlignment="Center" Margin="0,10,0,0"/></StackPanel>

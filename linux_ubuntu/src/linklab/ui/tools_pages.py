@@ -12,6 +12,7 @@ from .industrial_pages import FUNCTIONS, parse_values
 from .communication_pages import CHECKSUMS
 from ..protocols import codec
 from ..protocols.modbus import build_pdu, build_rtu, build_tcp
+from .. import APP_NAME
 
 
 class WorkbenchPage(Page):
@@ -191,7 +192,7 @@ class MonitorPage(Page):
             self.details.setPlainText(f"{entry['source']} · {entry['note']}\nUTF-8：{entry['text']}")
 
     def export(self, extension):
-        path, _ = QFileDialog.getSaveFileName(self, "导出通信记录", "linklab-log."+extension, f"{extension.upper()} (*.{extension})")
+        path, _ = QFileDialog.getSaveFileName(self, "导出通信记录", APP_NAME+"-通信记录."+extension, f"{extension.upper()} (*.{extension})")
         if not path:
             return
         try:

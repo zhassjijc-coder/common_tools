@@ -6,7 +6,7 @@ public sealed class OcrTextWindow : Window
 {
     public OcrTextWindow(string text, Action<string> copy)
     {
-        Title = "LinkLab · 文字识别结果"; Width = 700; Height = 480; MinWidth = 440; MinHeight = 260; Topmost = true; WindowStartupLocation = WindowStartupLocation.CenterScreen;
+        Title = "设备联调工具 · 文字识别结果"; Width = 700; Height = 480; MinWidth = 440; MinHeight = 260; Topmost = true; WindowStartupLocation = WindowStartupLocation.CenterScreen;
         SetResourceReference(BackgroundProperty, "Bg"); SetResourceReference(ForegroundProperty, "Text");
         var root = new DockPanel { Margin = new Thickness(20) };
         var header = new TextBlock { Text = "识别结果", FontSize = 21, FontWeight = FontWeights.SemiBold, Margin = new Thickness(0, 0, 0, 15) }; DockPanel.SetDock(header, Dock.Top); root.Children.Add(header);

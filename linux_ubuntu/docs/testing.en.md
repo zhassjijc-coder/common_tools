@@ -1,8 +1,8 @@
 [简体中文](testing.md) | **English**
 
-# Compatibility and verification scope
+# Device Debug Tools · Python Qt compatibility and verification scope
 
-The Python Qt edition has been verified on Windows x64 with Python 3.12 and PySide6 6.8.3. Ubuntu 22.04 / 24.04 are target platforms; native desktop and hardware verification remains pending.
+The Python Qt edition of Device Debug Tools has been verified on Windows x64 with Python 3.12 and PySide6 6.8.3. Ubuntu 22.04 / 24.04 are target platforms; native desktop and hardware verification remains pending.
 
 | Feature | Verified | Environment-specific checks still required |
 | --- | --- | --- |
@@ -17,3 +17,5 @@ Global F1/F3 is unavailable under Wayland; desktop capture depends on system per
 Device-configuration screenshots use demo data rather than hardware. Simulators provide protocol/memory access and do not execute PLC programs. The Windows WPF edition's results do not establish equivalent Python hardware validation. Configuration and snapshot formats are edition-specific.
 
 See the [usage guide](../README.en.md#test-and-package) for test commands. Generated results remain in the local ignored `artifacts/` directory.
+
+Multi-monitor capture regressions cover mixed 150% / 125% scaling, negative origins, seams, native-pixel crops, shared zoom/annotations, cross-DPI text re-editing and Space-pan release. The native Windows Qt backend also checks each monitor's window geometry, DPI, bottom-right rendering and full export using synthetic images and hidden test windows; no desktop contents are saved. Adding/removing a monitor or changing its geometry closes all capture overlays.

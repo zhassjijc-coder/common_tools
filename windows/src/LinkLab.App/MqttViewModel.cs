@@ -187,12 +187,12 @@ public sealed class MqttVm : PageVm
     private void Changed() { Raise(nameof(Active)); Raise(nameof(Connected)); Raise(nameof(CanConfigure)); Raise(nameof(ConnectText)); }
     private void Export()
     {
-        var dialog = new SaveFileDialog { Filter = "MQTT 消息 JSON|*.json", FileName = "LinkLab-mqtt-messages.json" };
+        var dialog = new SaveFileDialog { Filter = "MQTT 消息 JSON|*.json", FileName = "设备联调工具-MQTT消息.json" };
         if (dialog.ShowDialog() == true) File.WriteAllText(dialog.FileName, JsonSerializer.Serialize(MessageView.Cast<MqttRecord>().Select(m => new { m.Time, m.Direction, m.Topic, m.Qos, m.Retain, m.OriginalLength, m.Truncated, PayloadBase64 = Convert.ToBase64String(m.Payload), m.Text }), new JsonSerializerOptions { WriteIndented = true }));
     }
     private void SaveProfile()
     {
-        var dialog = new SaveFileDialog { Filter = "MQTT 配置模板|*.json", FileName = "LinkLab-mqtt-profile.json" };
+        var dialog = new SaveFileDialog { Filter = "MQTT 配置模板|*.json", FileName = "设备联调工具-MQTT配置.json" };
         if (dialog.ShowDialog() != true) return; var prefs = new Preferences(); prefs.Transfer("mqtt", this, true);
         File.WriteAllText(dialog.FileName, JsonSerializer.Serialize(prefs.Values, new JsonSerializerOptions { WriteIndented = true })); Hub.Notice = "MQTT 模板已保存（不含密码和客户端证书密码）";
     }

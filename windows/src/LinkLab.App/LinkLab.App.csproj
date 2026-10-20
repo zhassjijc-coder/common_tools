@@ -8,6 +8,11 @@
     <AssemblyName>LinkLab</AssemblyName>
     <RootNamespace>LinkLab.App</RootNamespace>
     <Version>1.0</Version>
+    <Title>设备联调工具｜串口、Modbus、PLC、MQTT 调试工具箱</Title>
+    <AssemblyTitle>设备联调工具｜串口、Modbus、PLC、MQTT 调试工具箱</AssemblyTitle>
+    <Product>设备联调工具</Product>
+    <Company>zhang</Company>
+    <Description>串口、Modbus、PLC、MQTT 调试工具箱</Description>
     <ApplicationManifest>app.manifest</ApplicationManifest>
     <ApplicationIcon>Assets/LinkLab.ico</ApplicationIcon>
   </PropertyGroup>

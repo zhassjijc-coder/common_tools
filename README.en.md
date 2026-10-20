@@ -1,15 +1,15 @@
 [简体中文](README.md) | **English**
 
-# LinkLab
+# Device Debug Tools | Serial, Modbus, PLC & MQTT Debugging Toolbox
 
-A desktop communication workbench for embedded, industrial and IoT development. Serial, TCP/UDP, Modbus, PLC, MQTT, device configuration and local screenshot/OCR tools share a light-themed workspace. Both editions remain at **1.0**.
+**Device Debug Tools** (设备联调工具) is a desktop communication workbench for embedded, industrial and IoT development. Serial, TCP/UDP, Modbus, PLC, MQTT, device configuration and local screenshot/OCR tools share a light-themed workspace. Both editions remain at **1.0**.
 
 | Edition | Stack | Guide |
 | --- | --- | --- |
 | Windows | .NET 10 / WPF | [Windows guide](windows/README.en.md) |
 | Ubuntu / cross-platform | Python 3.10–3.13 / PySide6 Qt 6 | [Python Qt guide](linux_ubuntu/README.en.md); also runnable and tested on Windows |
 
-![Python Qt workspace](linux_ubuntu/docs/images/home.png)
+![Device Debug Tools · Python Qt workspace](linux_ubuntu/docs/images/home.png)
 
 ## Features
 

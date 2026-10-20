@@ -1,2 +1,5 @@
-"""LinkLab cross-platform Qt workbench."""
+"""Device Debug Tools, a cross-platform Qt communication workbench."""
 __version__ = "1.0"
+APP_NAME = "设备联调工具"
+APP_SUBTITLE = "串口、Modbus、PLC、MQTT 调试工具箱"
+APP_TITLE = f"{APP_NAME}｜{APP_SUBTITLE}"

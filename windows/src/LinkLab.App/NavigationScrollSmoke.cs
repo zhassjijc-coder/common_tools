@@ -39,7 +39,7 @@ internal static class NavigationScrollSmoke
             Check(!App.Descendants<TextBlock>(window).Any(block => block.Text.Contains("支持卓岚 ZLAN 设备")), "Removed network description remained visible");
             vm.Navigate("serial"); await Layout(window);
             Check(!vm.IsSettingsSelected && ReferenceEquals(list.SelectedItem, vm.SelectedNav), "Visible module selection did not recover");
-            Check(vm.VersionLabel == "LINKLAB  /  1.0", "Unexpected application version");
+            Check(vm.VersionLabel == "设备联调工具  /  1.0", "Unexpected application version");
             window.Width = width; window.Height = height; vm.Navigate("home"); await Layout(window);
             File.WriteAllText(Path.Combine(output, "navigation-scroll-result.txt"), $"PASS: virtual serial hidden from sidebar and home; legacy route falls back to home; home shows {vm.ToolCount} tools including network configuration; visible module selection and pinned settings work at minimum window size; version remains 1.0.\n");
             return;
@@ -48,7 +48,7 @@ internal static class NavigationScrollSmoke
         while (!vm.VirtualSerial.RefreshCommand.CanExecute(null)) await Task.Delay(10);
         await Layout(window);
         Check(!vm.IsSettingsSelected && ReferenceEquals(list.SelectedItem, vm.SelectedNav), "Module selection did not recover");
-        Check(vm.VersionLabel == "LINKLAB  /  1.0", "Unexpected application version");
+        Check(vm.VersionLabel == "设备联调工具  /  1.0", "Unexpected application version");
 
         var page = App.Descendants<ScrollViewer>(window).Single(x => ScrollChain.GetEnabled(x));
         var grid = App.Descendants<DataGrid>(page).Single();

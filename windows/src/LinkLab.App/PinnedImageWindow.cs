@@ -17,7 +17,7 @@ public sealed class PinnedImageWindow : Window
     public PinnedImageWindow(BitmapSource image, Action<BitmapSource> copy, Action<BitmapSource> ocr)
     {
         _image = image;
-        Title = "LinkLab 贴图 · 拖动移动 / 滚轮缩放 / Ctrl+滚轮透明度 / Ctrl+0 原始比例";
+        Title = "设备联调工具 · 贴图 · 拖动移动 / 滚轮缩放 / Ctrl+滚轮透明度 / Ctrl+0 原始比例";
         WindowStyle = WindowStyle.None; ResizeMode = ResizeMode.CanResizeWithGrip; Topmost = true; ShowInTaskbar = false;
         MinWidth = 260; MinHeight = 150; WindowStartupLocation = WindowStartupLocation.CenterScreen;
         BorderThickness = new Thickness(1); SetResourceReference(BackgroundProperty, "Card"); SetResourceReference(ForegroundProperty, "Text"); SetResourceReference(BorderBrushProperty, "Line");

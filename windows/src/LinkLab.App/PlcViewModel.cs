@@ -246,6 +246,6 @@ public sealed class PlcVm : PageVm
     private async Task StopServer() { if (_server is not null) { await _server.DisposeAsync(); _server = null; } ServerStatus = "服务器已停止，内存保留"; Changed(); }
     public async Task Close() { await Disconnect(); await StopServer(); }
     private void Changed() { foreach (var p in new[] { nameof(Running), nameof(CanSelectProtocol), nameof(CanConfigure), nameof(CanConnect), nameof(IsConnected), nameof(ConnectionState), nameof(CanConfigureServer), nameof(ServerToggleText), nameof(PollText) }) Raise(p); }
-    private void SaveMemory() { var d = new SaveFileDialog { Filter = "PLC 内存快照|*.json", FileName = $"LinkLab-{Protocol}-memory.json" }; if (d.ShowDialog() == true) File.WriteAllText(d.FileName, Memory.Snapshot()); }
+    private void SaveMemory() { var d = new SaveFileDialog { Filter = "PLC 内存快照|*.json", FileName = $"设备联调工具-{Protocol}-内存快照.json" }; if (d.ShowDialog() == true) File.WriteAllText(d.FileName, Memory.Snapshot()); }
     private void LoadMemory() { var d = new OpenFileDialog { Filter = "PLC 内存快照|*.json" }; if (d.ShowDialog() == true) { if (new FileInfo(d.FileName).Length > 12_000_000) throw new IOException("快照超过 12 MB。"); Memory.Restore(File.ReadAllText(d.FileName)); Refresh(); Hub.Notice = "模拟内存快照已载入"; } }
 }

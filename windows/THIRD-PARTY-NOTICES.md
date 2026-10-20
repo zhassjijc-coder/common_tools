@@ -1,6 +1,6 @@
-# Third-party components
+# Device Debug Tools · Third-party components
 
-LinkLab uses Microsoft .NET 10, Windows Presentation Foundation, and System.IO.Ports 10.0.9. These components are distributed under their respective MIT licenses and third-party notices.
+Device Debug Tools (设备联调工具) uses Microsoft .NET 10, Windows Presentation Foundation, and System.IO.Ports 10.0.9. These components are distributed under their respective MIT licenses and third-party notices.
 
 - .NET runtime: https://github.com/dotnet/runtime
 - WPF: https://github.com/dotnet/wpf
@@ -10,9 +10,9 @@ The self-contained distribution includes upstream LICENSE.txt and THIRD-PARTY-NO
 
 The application uses Windows system fonts; font files are not redistributed. Interface graphics are code-native vector drawings created for this project.
 
-Since 1.3, the system tray uses the Windows Forms NotifyIcon component from Microsoft's .NET Windows Desktop runtime (MIT): https://github.com/dotnet/winforms . The main application UI remains WPF.
+The system tray uses the Windows Forms NotifyIcon component from Microsoft's .NET Windows Desktop runtime (MIT): https://github.com/dotnet/winforms . The main application UI remains WPF.
 
-## Added in 1.1
+## PLC, MQTT and OCR dependencies
 
 | Component | Version / source | License / attribution |
 |---|---|---|
@@ -33,12 +33,12 @@ Full license texts are included in `licenses/`, and the OCR model license is als
 
 This software is based in part on the work of the Independent JPEG Group.
 
-LinkLab calls IoTClient's protected PLC command-builder APIs through small adapters, patches transaction/routing fields and MC packed-bit write counts, and supplies its own asynchronous transport, validators and memory servers. These are community implementations of vendor protocols, not official Siemens/Mitsubishi/Omron SDKs or endorsements. No HslCommunication binary or source is included.
+Device Debug Tools calls IoTClient's protected PLC command-builder APIs through small adapters, patches transaction/routing fields and MC packed-bit write counts, and supplies its own asynchronous transport, validators and memory servers. These are community implementations of vendor protocols, not official Siemens/Mitsubishi/Omron SDKs or endorsements. No HslCommunication binary or source is included.
 
-MQTTX and Snipaste are functional references only; their code, graphics and trademarks are not redistributed as part of LinkLab. No network OCR service is used. OCR native libraries may require the separately installed Microsoft Visual C++ x64 runtime; it is not redistributed in this package.
+MQTTX and Snipaste are functional references only; their code, graphics and trademarks are not redistributed as part of Device Debug Tools. No network OCR service is used. OCR native libraries may require the separately installed Microsoft Visual C++ x64 runtime; it is not redistributed in this package.
 
 ## Optional virtual serial driver (currently hidden)
 
 The virtual serial module is temporarily hidden from the current release. No virtual serial driver is required for the available modules. Its source is retained pending validation of a compatible, permanently free driver that permits commercial use.
 
-The virtual serial module invokes the separately installed com0com `setupc.exe` command-line tool. com0com is an external GPL-2.0-or-later project by Vyacheslav Frolov: https://com0com.sourceforge.net/ . LinkLab does not bundle, copy, link or modify com0com driver binaries or source. Users obtain a compatible driver separately from its upstream releases and retain its license notices. Driver compatibility and Windows signature acceptance depend on the installed release and operating-system configuration.
+The virtual serial module invokes the separately installed com0com `setupc.exe` command-line tool. com0com is an external GPL-2.0-or-later project by Vyacheslav Frolov: https://com0com.sourceforge.net/ . Device Debug Tools does not bundle, copy, link or modify com0com driver binaries or source. Users obtain a compatible driver separately from its upstream releases and retain its license notices. Driver compatibility and Windows signature acceptance depend on the installed release and operating-system configuration.
