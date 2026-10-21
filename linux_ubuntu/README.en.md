@@ -68,6 +68,39 @@ After setup, double-click `scripts/run.bat` or invoke it from CMD. `.ps1` files 
 
 Alternatively, run `.venv/Scripts/python.exe main.py` inside `linux_ubuntu/` (Ubuntu: `.venv/bin/python main.py`). `--background` starts in the tray when available, otherwise keeps a window. A second launch activates the existing Qt instance for the same user/desktop session.
 
+## Develop in PyCharm
+
+1. Install Python **3.10–3.13** (3.12 x64 recommended). Follow the setup steps above, including system dependencies, and run `setup.sh` or `setup.ps1` to create `linux_ubuntu/.venv`.
+2. In PyCharm, use **File → Open** to open the repository's **`linux_ubuntu/` directory**, keeping the source tree intact.
+3. Under **Settings → Python → Interpreter**, add an existing local interpreter from this project's `.venv`; do not create another environment. Older versions may use **Project → Python Interpreter**.
+
+   | OS | Interpreter path relative to `linux_ubuntu/` |
+   | --- | --- |
+   | Windows | `.venv\Scripts\python.exe` |
+   | Ubuntu | `.venv/bin/python` |
+
+4. Under **Run → Edit Configurations**, add a **Python** configuration:
+
+   | Setting | Value |
+   | --- | --- |
+   | Script path | `$PROJECT_DIR$/main.py` |
+   | Working directory | `$PROJECT_DIR$` (`linux_ubuntu/`) |
+   | Python interpreter | The project's `.venv` selected above |
+   | Parameters | Leave empty to show the main window |
+
+5. Choose **Run** or **Debug**. You can also right-click `main.py` to run it, then check these settings. This entry point handles `src/` imports; no extra `PYTHONPATH` is needed.
+
+If you open the entire repository in PyCharm, use `$PROJECT_DIR$/linux_ubuntu/main.py` as the script and `$PROJECT_DIR$/linux_ubuntu` as the working directory, with the interpreter inside `linux_ubuntu/.venv`.
+
+Notes:
+
+- For `ModuleNotFoundError` (such as `PySide6`), check the run configuration's interpreter. Inside `linux_ubuntu/`, use that interpreter with `-m pip install -r requirements.txt`. This project uses **PySide6**, not PyQt6.
+- Exit any existing Qt instance through its tray menu before debugging; a second launch otherwise activates that instance. Run `main.py`, not `src/linklab/__main__.py` as a standalone script.
+- Create a separate `.venv` on each OS. Ubuntu still needs the Qt system libraries, OCR languages and serial permissions described above; PyCharm does not install them.
+- The root `.gitignore` excludes `.idea/`, `.venv/` and generated output.
+
+See JetBrains' official [interpreter setup](https://www.jetbrains.com/help/pycharm/configuring-python-interpreter.html) and [Python run configuration](https://www.jetbrains.com/help/pycharm/run-debug-configuration-python.html) guides for menu details.
+
 ## Usage notes
 
 - **UI controls**: Dropdowns mark the selected option and show full text on hover. Scrolling over an unfocused dropdown does not change its value. Drag table headers to resize columns; narrow windows scroll within the table, and colored badges distinguish states.

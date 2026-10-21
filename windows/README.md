@@ -61,6 +61,16 @@
 
 **便携版：** 解压 `LinkLab-<版本>-win-x64.zip`，进入文件夹运行 `LinkLab.exe`。请保留完整目录，不要只复制 EXE。
 
+**Visual Studio 开发：** 推荐使用最新稳定版 **Visual Studio 2026**。
+
+1. 在 Visual Studio Installer 中安装 **“.NET 桌面开发”** 工作负载，并确认已安装 **.NET 10 SDK**；仅安装运行时不能编译项目。
+2. 打开仓库中的 `windows/LinkLab.sln`，在解决方案资源管理器中将 **LinkLab.App** 设为启动项目。
+3. 等待 NuGet 包恢复完成，或右键解决方案选择“还原 NuGet 程序包”，然后按 **F5** 调试，或 **Ctrl+F5** 直接运行。
+
+当前 WPF 项目目标为 `net10.0-windows`，**Visual Studio 2022 不支持当前目标**，本项目不提供 VS2022 兼容构建。版本对应关系见 [Microsoft 官方说明](https://learn.microsoft.com/en-us/dotnet/core/porting/versioning-sdk-msbuild-vs)。
+
+项目加载或恢复失败时，先查看“视图 → 输出”中的生成 / NuGet 错误，核对 VS 版本、SDK 和桌面开发工作负载。在 `windows/` 目录执行 `dotnet --list-sdks` 和 `dotnet --version` 可检查 SDK。项目的 `global.json` 指定 `10.0.100`、`rollForward: latestFeature`，允许使用已安装的更新 .NET 10 SDK 功能带；请保留该文件和当前目标框架，不通过删除 SDK 配置或降级目标绕过错误。SDK 选择规则见 [global.json 文档](https://learn.microsoft.com/en-us/dotnet/core/tools/global-json)。
+
 **源码运行：** 先进入 `windows/` 项目目录，再执行：
 
 ```powershell

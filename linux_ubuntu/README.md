@@ -68,6 +68,39 @@ Windows 源码测试使用 Python 3.10–3.13：
 
 也可以直接运行 `.venv/Scripts/python.exe main.py`（先进入 `linux_ubuntu/`）。Ubuntu 对应 `.venv/bin/python main.py`。`--background` 在托盘可用时后台启动；托盘不可用时保留窗口。再次启动会唤回同一用户、同一桌面会话内的 Qt 实例。
 
+## 使用 PyCharm 开发
+
+1. 安装 Python **3.10–3.13**（建议 3.12 x64），先按上方步骤安装系统依赖并执行 `setup.sh` 或 `setup.ps1`，生成 `linux_ubuntu/.venv`。
+2. 在 PyCharm 中选择 **File → Open（文件 → 打开）**，打开仓库中的 **`linux_ubuntu/` 文件夹**，保留完整源码目录。
+3. 在 **Settings → Python → Interpreter** 中添加本地已有解释器，选择此项目的 `.venv`，不要重复创建环境。旧版 PyCharm 的入口可能是 **Project → Python Interpreter**。解释器文件为：
+
+   | 系统 | 路径（相对于 `linux_ubuntu/`） |
+   | --- | --- |
+   | Windows | `.venv\Scripts\python.exe` |
+   | Ubuntu | `.venv/bin/python` |
+
+4. 打开 **Run → Edit Configurations（运行 → 编辑配置）**，新增 **Python** 配置：
+
+   | 配置项 | 值 |
+   | --- | --- |
+   | Script path / 脚本路径 | `$PROJECT_DIR$/main.py` |
+   | Working directory / 工作目录 | `$PROJECT_DIR$`（即 `linux_ubuntu/`） |
+   | Python interpreter / 解释器 | 上一步选定的项目 `.venv` |
+   | Parameters / 参数 | 留空，正常显示主窗口 |
+
+5. 点击 **Run** 启动或 **Debug** 断点调试。也可右键 `main.py` 运行，再核对上述配置。`main.py` 已处理 `src/` 导入路径，无需额外设置 `PYTHONPATH`。
+
+若在 PyCharm 中打开的是整个仓库，脚本路径改为 `$PROJECT_DIR$/linux_ubuntu/main.py`，工作目录改为 `$PROJECT_DIR$/linux_ubuntu`，解释器仍选 `linux_ubuntu/.venv` 中的文件。
+
+注意事项：
+
+- 提示 `ModuleNotFoundError`（如 `PySide6`）时，检查运行配置的解释器；进入 `linux_ubuntu/`，用该解释器执行 `-m pip install -r requirements.txt`。本项目使用 **PySide6**，不是 PyQt6。
+- 调试前通过托盘菜单退出已运行的 Qt 实例，否则新启动只会唤回旧实例。直接运行 `main.py`，不要把 `src/linklab/__main__.py` 当作独立脚本。
+- Windows 与 Ubuntu 需分别创建 `.venv`，不能跨系统复制。Ubuntu 仍需安装上方列出的 Qt 系统库、OCR 语言包并配置串口权限；PyCharm 不会代为安装。
+- `.idea/`、`.venv/` 和运行产物由根目录 `.gitignore` 排除，无需提交。
+
+PyCharm 菜单参考官方的 [解释器配置](https://www.jetbrains.com/help/pycharm/configuring-python-interpreter.html) 与 [Python 运行配置](https://www.jetbrains.com/help/pycharm/run-debug-configuration-python.html)。
+
 ## 使用
 
 - **界面操作**：下拉菜单显示当前选项，长文本可悬停查看；未聚焦的下拉框不会因页面滚动误切参数。表格支持拖动列宽，窄窗口可在表内横向滚动，状态通过颜色标签区分。

@@ -61,6 +61,16 @@ Built with **.NET 10 + WPF + MVVM**. Light theme by default, with a dark theme a
 
 **Portable build:** Extract `LinkLab-<version>-win-x64.zip` and run `LinkLab.exe` inside the extracted folder. Keep the entire folder together.
 
+**Visual Studio development:** Use the latest stable **Visual Studio 2026**.
+
+1. Install the **.NET desktop development** workload in Visual Studio Installer and ensure the **.NET 10 SDK** is installed. The runtime alone cannot build the project.
+2. Open `windows/LinkLab.sln` from the repository and set **LinkLab.App** as the startup project in Solution Explorer.
+3. Wait for NuGet restore to complete, or right-click the solution and select **Restore NuGet Packages**. Press **F5** to debug or **Ctrl+F5** to run without debugging.
+
+The WPF project currently targets `net10.0-windows`. **Visual Studio 2022 does not support this target**, and this project does not provide a VS2022-compatible build. See [Microsoft's version compatibility guidance](https://learn.microsoft.com/en-us/dotnet/core/porting/versioning-sdk-msbuild-vs).
+
+If loading or restore fails, inspect the Build / NuGet errors under **View → Output**, then check the VS version, SDK and desktop development workload. Run `dotnet --list-sdks` and `dotnet --version` from `windows/` to check the SDK. The project's `global.json` specifies `10.0.100` with `rollForward: latestFeature`, allowing later installed .NET 10 SDK feature bands. Keep this file and the current target framework; do not delete the SDK configuration or downgrade the target to bypass errors. See the [global.json documentation](https://learn.microsoft.com/en-us/dotnet/core/tools/global-json) for SDK selection rules.
+
 **Run from source:** First enter the `windows/` project directory, then execute:
 
 ```powershell
