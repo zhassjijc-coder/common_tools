@@ -13,7 +13,7 @@ from PySide6.QtWidgets import (QCheckBox, QFormLayout, QGridLayout, QHBoxLayout,
 from .common import (Page, button, combo, configure_columns, line, row,
     set_cell, spin, table, text_area)
 from ..protocols.zlan import (APP_PROTOCOLS, BAUD_RATES, FLOW_CONTROLS, MODES, PARITIES,
-    DeviceSettings, DeviceSnapshot, ZlanClient, export_profile, import_profile, write_packet)
+    DeviceSettings, DeviceSnapshot, ZlanClient, export_profile, import_profile, write_packet, restart_packet)
 
 
 def _field(title, widget):
@@ -62,8 +62,10 @@ class NetConfigPage(Page):
         self.search_button = button("搜索局域网设备", lambda: self.search(True), True)
         self.query_button = button("按 IP 查询", lambda: self.search(False))
         self.read_button = button("重读所选设备", self.read_selected)
+        self.restart_button = button("重启所选设备", self.restart_selected)
+        self.restart_button.setToolTip("保留设备当前参数；不会提交编辑区未写入的修改")
         discovery_actions = QHBoxLayout(); discovery_actions.setSpacing(10)
-        for widget in (self.search_button, self.query_button, self.read_button):
+        for widget in (self.search_button, self.query_button, self.read_button, self.restart_button):
             discovery_actions.addWidget(widget)
         discovery_actions.addStretch(); discovery_actions.addWidget(self.refresh_button)
         discovery.addLayout(discovery_actions)
@@ -87,9 +89,10 @@ class NetConfigPage(Page):
         fields.setColumnStretch(0, 1); fields.setColumnStretch(1, 1)
         self.name = line(); self.name.setMaxLength(9)
         self.address = line(); self.mask = line(); self.gateway = line()
-        # Keep unsupported zero values visible when reading an existing device;
-        # validation requires the user to correct them before any write.
+        # TCP Client supports local port zero; validation remains mode-aware.
+        # Keep other invalid zero ports visible rather than silently changing them.
         self.local_port = spin(4196, 0, 65535); self.destination = line(); self.destination_port = spin(4196, 0, 65535)
+        self.local_port.setToolTip("TCP Client 模式允许 0，表示随机分配本地端口；其他模式需填写 1–65535。")
         self.mode = combo(MODES); self.baud = combo(BAUD_RATES, 9600); self.parity = combo(PARITIES)
         self.data_bits = combo((5, 6, 7, 8), 8); self.stop_bits = combo((1, 2), 1)
         self.flow_control = combo(FLOW_CONTROLS); self.app_protocol = combo(APP_PROTOCOLS)
@@ -162,6 +165,7 @@ class NetConfigPage(Page):
         for widget in (self.review_button, self.restore_button, self.save_button, self.load_button):
             widget.setEnabled(can_edit)
         self.read_button.setEnabled(idle and self.selected is not None)
+        self.restart_button.setEnabled(can_edit)
         self.apply_button.setEnabled(can_edit and self._reviewed is not None)
         self.dhcp.setEnabled(can_edit and self.selected is not None and self.selected.supports_dhcp)
         needs_password = self.selected is not None and self.selected.password_required
@@ -170,7 +174,7 @@ class NetConfigPage(Page):
 
     def _status(self, text: str, *, error: bool = False):
         self.status.setText(text)
-        tone = "error" if error else "success" if text.startswith(("写入成功", "设备参数已重读", "收到")) else "warning" if "未收到" in text or "未确认" in text else "info"
+        tone = "error" if error else "success" if text.startswith(("写入成功", "重启指令已发送：已回读", "设备参数已重读", "收到")) else "warning" if "未收到" in text or "未确认" in text else "info"
         if self.status.property("statusTone") != tone:
             self.status.setProperty("statusTone", tone)
             self.status.style().unpolish(self.status); self.status.style().polish(self.status); self.status.update()
@@ -285,8 +289,9 @@ class NetConfigPage(Page):
                 raise ValueError("请先选择可编辑的 167 字节参数设备。")
             value = self.settings(); write_packet(self.selected, value, self.password.text())
             self._reviewed = (self.selected.identity, value)
+            local_port = "0（随机）" if value.local_port == 0 else str(value.local_port)
             self.preview.setPlainText(f"设备 {self.selected.identity} · 当前 IP {self.selected.settings.address}\n"
-                f"设备名 {value.name} · 新 IP {value.address} / {value.mask}\n网关 {value.gateway} · 本地端口 {value.local_port} · {'DHCP' if value.dhcp else '静态 IP'}\n"
+                f"设备名 {value.name} · 新 IP {value.address} / {value.mask}\n网关 {value.gateway} · 本地端口 {local_port} · {'DHCP' if value.dhcp else '静态 IP'}\n"
                 f"{MODES[value.mode]} → {value.destination}:{value.destination_port}\n串口 {value.baud} / {value.data_bits}{PARITIES[value.parity]}{value.stop_bits} · {FLOW_CONTROLS[value.flow_control]}\n"
                 f"转化协议 {APP_PROTOCOLS[value.app_protocol]}\n写入后将重启设备；只在回读确认后显示成功。")
             self.preview.show(); self.apply_button.show(); self._controls(); self._status("请核对设备身份、原 IP 和拟改参数，再确认写入。")
@@ -307,6 +312,27 @@ class NetConfigPage(Page):
         def complete(device):
             self._upsert(device); self._render(device.identity); self._status("写入成功：已回读相同 DevID / 通道，参数一致。")
         self._run(lambda: self.client.apply(selected, settings, password=password, bind=bind, timeout=timeout, cancel=self._cancel), complete)
+
+    def restart_selected(self):
+        if self._working or self.selected is None or not self.selected.writable:
+            return
+        selected = self.selected
+        password = self.password.text()
+        try:
+            restart_packet(selected, password)
+        except ValueError as exc:
+            self._status(str(exc), error=True); return
+        answer = QMessageBox.question(self, "确认重启所选设备",
+            f"设备 {selected.identity}\n当前 IP {selected.settings.address}\n\n重启将暂时中断设备通信，并保留设备当前参数。编辑区尚未写入的修改不会发送。\n是否重启此设备？",
+            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No, QMessageBox.StandardButton.No)
+        if answer != QMessageBox.StandardButton.Yes:
+            return
+        bind, timeout = self.interface.currentData() or "0.0.0.0", self.timeout.value() / 1000
+        self._status(f"正在确认 {selected.identity} 的身份并发送重启指令，等待设备回读…")
+        def complete(device):
+            self._upsert(device); self._render(device.identity)
+            self._status("重启指令已发送：已回读相同 DevID / 通道，参数一致。")
+        self._run(lambda: self.client.restart(selected, password=password, bind=bind, timeout=timeout, cancel=self._cancel), complete)
 
     def save_profile(self):
         try:

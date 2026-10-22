@@ -136,7 +136,7 @@ public sealed class QuickVm : PageVm
         if (_floating.OfType<PinnedImageWindow>().Count() >= 12) throw new InvalidOperationException("最多同时显示 12 张贴图，请先关闭部分贴图。");
         var source = ocrSource ?? (ReferenceEquals(image, LastImage) ? NeedOcrImage() : image);
         var window = new PinnedImageWindow(image, value => { try { CopyImage(value, source); } catch (Exception ex) { Hub.Error(ex); } }, value => _ = RecognizeSafely(source));
-        Track(window, show); Status = "贴图已创建 · 拖动移动，滚轮 / ± 缩放，100% 重置，Ctrl+滚轮调透明度"; return window;
+        Track(window, show); Status = "贴图已创建 · 拖动移动，滚轮按比例缩放，Ctrl+滚轮调透明度"; return window;
     }
     private void Track(Window window, bool show = true) { _floating.Add(window); window.Closed += (_, _) => _floating.Remove(window); if (show) window.Show(); }
     private void CloseFloating() { foreach (var window in _floating.ToArray()) window.Close(); _floating.Clear(); }

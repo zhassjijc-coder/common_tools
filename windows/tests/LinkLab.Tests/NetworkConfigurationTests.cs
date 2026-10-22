@@ -53,6 +53,12 @@ internal static class NetworkConfigurationTests
         var protectedFrame = frame.ToArray(); protectedFrame[113] = 4; var protectedDevice = ZlanConfigurationProtocol.ParseResponse(protectedFrame, endpoint);
         Reject<ArgumentException>(() => ZlanConfigurationProtocol.Write(protectedDevice, protectedDevice.Settings));
         var protectedWrite = ZlanConfigurationProtocol.Write(protectedDevice, protectedDevice.Settings, "test-pass");
+        var reboot = ZlanConfigurationProtocol.Restart(device);
+        Check(reboot[2] == 2 && reboot.AsSpan(3).SequenceEqual(frame.AsSpan(3)), "Reboot must preserve all 167 raw parameter bytes.");
+        var protectedReboot = ZlanConfigurationProtocol.Restart(protectedDevice, "test-pass");
+        Check(protectedReboot.AsSpan(3, 21).SequenceEqual(protectedFrame.AsSpan(3, 21)) && protectedReboot.AsSpan(34).SequenceEqual(protectedFrame.AsSpan(34)), "Reboot altered parameters outside the authentication area.");
+        Reject<ArgumentException>(() => ZlanConfigurationProtocol.Restart(protectedDevice));
+        Reject<InvalidOperationException>(() => ZlanConfigurationProtocol.Restart(device with { Identity = "wrong-device" }));
         var safe = ZlanConfigurationProtocol.Redacted(protectedWrite);
         Check(safe.AsSpan(24, 10).ToArray().All(value => value == 0) && safe.AsSpan(118).ToArray().All(value => value == 0), "Authentication or extension secrets leaked into traffic logs.");
         Check(protectedFrame.AsSpan(24, 10).SequenceEqual(frame.AsSpan(24, 10)), "Entering a password mutated the original snapshot.");
@@ -68,6 +74,18 @@ internal static class NetworkConfigurationTests
         Reject<ArgumentException>(() => NetworkConfiguration.Validate(device.Settings with { Mask = "255.0.255.0" }));
         Reject<ArgumentException>(() => NetworkConfiguration.Validate(device.Settings with { Destination = "1.2" }));
         Reject<ArgumentException>(() => NetworkConfiguration.Validate(device.Settings with { Destination = new string('a', 30) }));
+        var clientZero = device.Settings with { Mode = 1, LocalPort = 0, DestinationPort = 8201, Dhcp = true };
+        NetworkConfiguration.Validate(clientZero);
+        var zeroPacket = ZlanConfigurationProtocol.Write(device, clientZero); zeroPacket[2] = 1;
+        var zeroReadback = ZlanConfigurationProtocol.ParseResponse(zeroPacket, endpoint);
+        Check(zeroPacket[19] == 0 && zeroPacket[20] == 0 && zeroReadback.Settings == clientZero, "TCP Client ephemeral local port was rejected or rewritten.");
+        foreach (int mode in new[] { 0, 1, 2, 3 })
+        {
+            foreach (int port in new[] { 1, 65535 }) NetworkConfiguration.Validate(clientZero with { Mode = mode, LocalPort = port });
+            if (mode != 1) Reject<ArgumentException>(() => NetworkConfiguration.Validate(clientZero with { Mode = mode }));
+            foreach (int port in new[] { -1, 65536 }) Reject<ArgumentException>(() => NetworkConfiguration.Validate(clientZero with { Mode = mode, LocalPort = port }));
+            foreach (int port in new[] { 0, -1, 65536 }) Reject<ArgumentException>(() => NetworkConfiguration.Validate(clientZero with { Mode = mode, LocalPort = 1, DestinationPort = port }));
+        }
         var lease = device.Settings with { Dhcp = true }; var leased = device with { Settings = lease with { Address = "10.8.9.10", Mask = "255.255.0.0", Gateway = "10.8.0.1" } };
         Check(ZlanConfigurationProtocol.Matches(leased, device, lease), "DHCP confirmation incorrectly compares dynamic lease addresses.");
 
@@ -77,7 +95,7 @@ internal static class NetworkConfigurationTests
         Check(discovered.Count == 1 && server.LastCommand == 0, "Read-only discovery did not deduplicate valid replies or ignore noise.");
         var selected = discovered[0]; var reread = await backend.Read("127.0.0.1", selected, 120, default);
         Check(reread.Identity == selected.Identity && server.LastCommand == 4, "Directed read did not preserve device identity.");
-        var changed = selected.Settings with { Name = "MOCK-NEW", LocalPort = 502, Baud = 19200 };
+        var changed = selected.Settings with { Name = "MOCK-NEW", Mode = 1, LocalPort = 0, DestinationPort = 8201, Baud = 19200 };
         var confirmed = await backend.Apply("127.0.0.1", selected, changed, "", 120, default);
         Check(confirmed.Settings == changed && server.Writes == 1, "Loopback device write was not verified by an actual UDP readback.");
         server.ReplaceName("EXTERNAL");
@@ -93,6 +111,25 @@ internal static class NetworkConfigurationTests
         Check(server.Queries == before, "A cancelled operation still sent a query.");
     }
 
+    internal static async Task RunRestart()
+    {
+        await using var rebootServer = new MockDevice(); var rebootBackend = new ZlanNetworkConfigurationBackend(rebootServer.Port);
+        var rebootDevice = (await rebootBackend.Discover("127.0.0.1", "127.0.0.1", false, 120, default))[0];
+        rebootServer.ReplaceName("FRESH"); var rawBefore = rebootServer.Raw;
+        var rebootResult = await rebootBackend.Restart("127.0.0.1", rebootDevice, "", 120, default);
+        Check(rebootResult.Settings.Name == "FRESH" && rebootServer.Writes == 1 && rebootServer.Raw.SequenceEqual(rawBefore), "Reboot used stale parameters, modified parameters or sent multiple commands.");
+        await RejectAsync<TimeoutException>(() => rebootBackend.Restart("127.0.0.1", rebootDevice with { Identity = "wrong-device" }, "", 120, default));
+        Check(rebootServer.Writes == 1, "Reboot command reached a different DevID.");
+        // A second mock starts online, then stops responding to read-only polls.
+        await using var silentServer = new MockDevice { HideAfterWrite = true }; var silentBackend = new ZlanNetworkConfigurationBackend(silentServer.Port);
+        var silentDevice = (await silentBackend.Discover("127.0.0.1", "127.0.0.1", false, 120, default))[0];
+        await RejectAsync<TimeoutException>(() => silentBackend.Restart("127.0.0.1", silentDevice, "", 120, default));
+        Check(silentServer.Writes == 1, "Unconfirmed reboot was automatically repeated.");
+        using var rebootCancel = new CancellationTokenSource(); rebootCancel.Cancel();
+        await RejectAsync<OperationCanceledException>(() => rebootBackend.Restart("127.0.0.1", rebootDevice, "", 120, rebootCancel.Token));
+        Check(rebootServer.Writes == 1, "Cancelled reboot still sent a control packet.");
+    }
+
     private sealed class MockDevice : IAsyncDisposable
     {
         private readonly UdpClient _server = new(new IPEndPoint(IPAddress.Loopback, 0));
@@ -104,6 +141,8 @@ internal static class NetworkConfigurationTests
         public int Writes { get; private set; }
         public byte LastCommand { get; private set; }
         public bool IgnoreWrite { get; set; }
+        public bool HideAfterWrite { get; set; }
+        public byte[] Raw => _frame.ToArray();
         public MockDevice() => _loop = Loop();
         public void ReplaceName(string name) { _frame.AsSpan(41, 10).Clear(); Encoding.ASCII.GetBytes(name).CopyTo(_frame, 41); }
         private async Task Loop()
@@ -117,7 +156,8 @@ internal static class NetworkConfigurationTests
                     LastCommand = bytes[2];
                     if (bytes[2] is 0 or 4)
                     {
-                        Queries++; await _server.SendAsync(new byte[] { 1, 2, 3 }, received.RemoteEndPoint, _stop.Token);
+                        Queries++; if (HideAfterWrite && Writes > 0) continue;
+                        await _server.SendAsync(new byte[] { 1, 2, 3 }, received.RemoteEndPoint, _stop.Token);
                         await _server.SendAsync(_frame, received.RemoteEndPoint, _stop.Token); await _server.SendAsync(_frame, received.RemoteEndPoint, _stop.Token);
                     }
                     else if (bytes[2] == 2)

@@ -72,8 +72,11 @@ class DeviceSettings:
         gateway = ipv4(self.gateway, "网关", allow_zero=True)
         if gateway != "0.0.0.0" and ipaddress.IPv4Address(gateway) not in network:
             raise ValueError("网关需位于同一子网，或设置为 0.0.0.0。")
-        if any(type(value) is not int or not 1 <= value <= 65535 for value in (self.local_port, self.destination_port)):
-            raise ValueError("网络端口范围为 1–65535。")
+        minimum_local_port = 0 if self.mode == 1 else 1
+        if type(self.local_port) is not int or not minimum_local_port <= self.local_port <= 65535:
+            raise ValueError("TCP Client 本地端口范围为 0–65535（0 表示随机端口）。" if self.mode == 1 else "当前工作模式的本地端口范围为 1–65535。")
+        if type(self.destination_port) is not int or not 1 <= self.destination_port <= 65535:
+            raise ValueError("目标端口范围为 1–65535。")
         if self.mode not in range(4) or self.parity not in range(5) or self.app_protocol not in range(3):
             raise ValueError("工作模式、校验或转化协议不受支持。")
         if self.baud not in BAUD_RATES or self.data_bits not in (5, 6, 7, 8) or self.stop_bits not in (1, 2) or self.flow_control not in range(4):
@@ -236,6 +239,22 @@ class OperationCancelled(Exception):
     pass
 
 
+def restart_packet(original: DeviceSnapshot, password: str = "") -> bytes:
+    """Rev.4: reboot is 0x02 with the complete current parameters unchanged."""
+    if not original.writable:
+        raise ValueError("此固件参数格式未经验证，仅支持读取，不能重启。")
+    packet = bytearray(b"ZL\x01" + original.parameters)
+    parsed = parse_response(bytes(packet), original.peer)
+    if parsed.identity != original.identity or parsed.settings != original.settings:
+        raise ValueError("设备快照与原始参数不匹配，拒绝重启。")
+    if original.password_required:
+        if not 1 <= len(password) <= 9 or any(not 32 <= ord(ch) <= 126 for ch in password):
+            raise ValueError("此设备启用了配置密码，请填写 1–9 个 ASCII 可见字符的设备密码。")
+        packet[24:34] = password.encode("ascii").ljust(10, b"\0")
+    packet[2] = 2
+    return bytes(packet)
+
+
 class ZlanClient:
     def __init__(self, port: int = MANAGEMENT_PORT, on_traffic: Callable[[str, bytes, str], None] | None = None):
         if not 1 <= port <= 65535:
@@ -318,6 +337,15 @@ class ZlanClient:
         if current.settings != expected.settings:
             raise ValueError("设备参数已被其他操作修改，请重新读取后核对。")
         packet = write_packet(current, settings, password)
+        return self._send_and_verify(current, settings, packet, bind, timeout, verify_timeout, cancel)
+
+    def restart(self, expected: DeviceSnapshot, *, password: str = "", bind: str = "0.0.0.0",
+                timeout: float = 2.0, verify_timeout: float = 6.0, cancel: threading.Event | None = None) -> DeviceSnapshot:
+        current = self.read(expected, bind=bind, timeout=timeout, cancel=cancel)
+        packet = restart_packet(current, password)
+        return self._send_and_verify(current, current.settings, packet, bind, timeout, verify_timeout, cancel, restarting=True)
+
+    def _send_and_verify(self, current, settings, packet, bind, timeout, verify_timeout, cancel, *, restarting=False):
         self._cancel(cancel)
         with self._socket(bind, False) as sock:
             self._send(sock, packet, (current.peer[0], self.port), bind, False); self._log("TX", packet, current.peer)
@@ -345,4 +373,6 @@ class ZlanClient:
                 for device in self.discover(bind, "255.255.255.255", broadcast=True, timeout=min(timeout, 0.6), cancel=cancel):
                     if matches(device, current, settings):
                         return device
+        if restarting:
+            raise TimeoutError("重启指令已发送，但尚未回读同一设备，无法确认重启结果。请稍后重新搜索；不会自动重发重启指令。")
         raise TimeoutError("配置已发送，但尚未回读同一设备并确认参数。请重新搜索核对，勿连续重复写入。")

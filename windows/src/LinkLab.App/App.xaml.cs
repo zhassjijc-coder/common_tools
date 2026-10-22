@@ -34,8 +34,9 @@ public partial class App : Application
         bool closeSmoke = e.Args.Contains("--close-smoke-test");
         bool systemSmoke = e.Args.Contains("--system-smoke-test");
         bool plcConnectSmoke = e.Args.Contains("--plc-connect-smoke-test");
+        bool captureNetworkSmoke = e.Args.Contains("--capture-network-smoke-test");
         bool driverCheck = e.Args.Contains("--driver-check");
-        bool verification = smoke || closeSmoke || systemSmoke || plcConnectSmoke || driverCheck;
+        bool verification = smoke || closeSmoke || systemSmoke || plcConnectSmoke || driverCheck || captureNetworkSmoke;
         string? output = verification ? Path.GetFullPath(e.Args.Last()) : null;
         StringWriter? trace = null;
         if (verification)
@@ -58,9 +59,16 @@ public partial class App : Application
                 if (!_instance.IsPrimary) { if (!background) _instance.RequestShow(); Shutdown(0); return; }
                 ShutdownMode = ShutdownMode.OnMainWindowClose;
             }
-            if (closeSmoke || systemSmoke || plcConnectSmoke || driverCheck)
+            if (closeSmoke || systemSmoke || plcConnectSmoke || driverCheck || captureNetworkSmoke)
             {
                 ShutdownMode = ShutdownMode.OnExplicitShutdown;
+                if (captureNetworkSmoke)
+                {
+                    await CaptureNetworkSmoke.Run(output!);
+                    PresentationTraceSources.DataBindingSource.Flush();
+                    File.WriteAllText(Path.Combine(output!, "bindings.log"), trace!.ToString());
+                    Shutdown(trace.ToString().Length == 0 ? 0 : 2); return;
+                }
                 if (closeSmoke) await WindowCloseSmoke.Run(output!);
                 else if (systemSmoke) await SystemSettingsSmoke.Run(output!);
                 else if (plcConnectSmoke)

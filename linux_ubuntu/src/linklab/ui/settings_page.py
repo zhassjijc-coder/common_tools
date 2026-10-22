@@ -76,7 +76,7 @@ class SettingsPage(QWidget):
         tools.addLayout(row)
         self._hint(tools, "F1：拖选后，V 移动选区 / 标注，拖边角调整尺寸。T 文字、R 矩形、S 正方形，均支持换色；双击文字编辑，Ctrl+Z 撤销。")
         self._hint(tools, "滚轮 / ± 缩放画布，空格拖动或中键平移；100% 重置。Enter 复制，Ctrl+S 保存，Esc 取消。文字输入时 Enter 确认，Shift+Enter 换行。")
-        self._hint(tools, "F3：拖动浮图移动；滚轮 / ± 缩放；100% 为当前屏幕的物理像素比例；Ctrl+滚轮调透明度。缩放不会改变保存分辨率。")
+        self._hint(tools, "F3：拖动浮图移动；滚轮按比例缩放，显示百分比；Ctrl+滚轮调透明度。浮窗不支持拉伸，没有滚动条；缩放不会改变原图分辨率。")
         self.status = QLabel("设置立即生效，所有截图和识别都在本机运行。")
         self.status.setWordWrap(True)
         self.status.setObjectName("statusBanner")

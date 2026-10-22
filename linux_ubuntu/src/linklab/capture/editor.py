@@ -741,44 +741,58 @@ class PinnedImageWindow(QWidget):
         self.image = image.copy()
         self.scale = 1.0
         self._drag = None
-        self.setWindowTitle(f"{APP_NAME} · 贴图 · 滚轮缩放 · Ctrl+滚轮透明度")
+        self.setWindowTitle(f"{APP_NAME} · 贴图 · 拖动移动 · 滚轮缩放 · Ctrl+滚轮透明度 · Esc 关闭")
         self.setStyleSheet("background:white;color:#24334a; QPushButton{background:#f6f8fc;color:#24334a;border:1px solid #dce3ee;border-radius:5px;padding:6px;}")
         layout = QVBoxLayout(self)
         layout.setContentsMargins(5, 5, 5, 5)
         bar = QHBoxLayout()
+        self._toolbar = bar
         layout.addLayout(bar)
-        for label, action in (("复制", lambda: copy(self.image)), ("识别", lambda: recognize(self.image)), ("−", lambda: self.set_scale(self.scale / 1.15)), ("+", lambda: self.set_scale(self.scale * 1.15)), ("100%", lambda: self.set_scale(1)), ("适应", self.fit), ("关闭", self.close)):
+        for label, action in (("复制", lambda: copy(self.image)), ("识别", lambda: recognize(self.image))):
             button = QPushButton(label)
             button.clicked.connect(action)
             bar.addWidget(button)
-        self.scale_label = QLabel()
-        bar.addWidget(self.scale_label)
+        bar.addStretch(1)
         self.picture = QLabel()
         self.picture.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.picture.setMouseTracking(True)
         self.picture.installEventFilter(self)
-        self.scroll = QScrollArea()
-        self.scroll.setWidget(self.picture)
-        self.scroll.setWidgetResizable(False)
-        layout.addWidget(self.scroll)
-        layout.addWidget(QLabel("拖动移动 · 滚轮 / ± 缩放 · Ctrl+滚轮透明度 · Esc 关闭"))
-        self.setMinimumSize(320, 160)
+        layout.addWidget(self.picture, alignment=Qt.AlignmentFlag.AlignCenter)
+        self.zoom_label = QLabel()
+        self.zoom_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.zoom_label.setFixedHeight(22)
+        layout.addWidget(self.zoom_label)
+        self.setToolTip(self.windowTitle())
         self.set_scale(min(1., 850 / image.width(), 600 / image.height()))
 
     def set_scale(self, scale):
         from PySide6.QtGui import QPixmap
-        self.scale = max(.1, min(8., float(scale)))
         ratio = self.devicePixelRatioF()
+        screen = self.screen().availableGeometry()
+        # Measure themed controls before fitting; fonts and styles change chrome.
+        self.ensurePolished()
+        margins = self.layout().contentsMargins()
+        chrome_width = margins.left() + margins.right()
+        chrome_height = (margins.top() + margins.bottom() + self._toolbar.sizeHint().height()
+                         + self.zoom_label.height() + 2 * self.layout().spacing())
+        fit = min(max(1, screen.width() * .9 - chrome_width) * ratio / self.image.width(),
+                  max(1, screen.height() * .9 - chrome_height) * ratio / self.image.height())
+        maximum = min(8., fit)
+        self.scale = max(min(.01, maximum), min(maximum, float(scale)))
         pixmap = QPixmap.fromImage(self.image).scaled(max(1, round(self.image.width() * self.scale)), max(1, round(self.image.height() * self.scale)), Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.SmoothTransformation)
         pixmap.setDevicePixelRatio(ratio)
         self.picture.setPixmap(pixmap)
-        self.picture.resize(round(pixmap.width() / ratio), round(pixmap.height() / ratio))
-        screen = self.screen().availableGeometry()
-        self.resize(max(320, min(self.picture.width() + 14, round(screen.width() * .9))), max(160, min(self.picture.height() + 100, round(screen.height() * .9))))
-        self.scale_label.setText(f"{self.scale:.0%}")
+        self.picture.setFixedSize(max(1, round(pixmap.width() / ratio)), max(1, round(pixmap.height() / ratio)))
+        self.zoom_label.setText(f"{self.scale * 100:.1f}% · 滚轮缩放")
+        self.layout().activate()
+        self.setFixedSize(self.layout().sizeHint())
 
-    def fit(self):
-        self.set_scale(min(self.scroll.viewport().width() * self.devicePixelRatioF() / self.image.width(), self.scroll.viewport().height() * self.devicePixelRatioF() / self.image.height()))
+    def showEvent(self, event):
+        super().showEvent(event)
+        if not getattr(self, "_screen_connected", False):
+            self.windowHandle().screenChanged.connect(lambda _: self.set_scale(self.scale))
+            self._screen_connected = True
+        self.set_scale(self.scale)
 
     def eventFilter(self, watched, event):
         from PySide6.QtCore import QEvent
@@ -796,19 +810,17 @@ class PinnedImageWindow(QWidget):
         return super().eventFilter(watched, event)
 
     def wheelEvent(self, event):
+        if event.angleDelta().y() == 0:
+            event.accept(); return
         if event.modifiers() & Qt.KeyboardModifier.ControlModifier:
             self.setWindowOpacity(max(.2, min(1., self.windowOpacity() + (.1 if event.angleDelta().y() > 0 else -.1))))
         else:
-            self.set_scale(self.scale * (1.15 if event.angleDelta().y() > 0 else 1 / 1.15))
+            self.set_scale(self.scale * 1.15 ** (event.angleDelta().y() / 120))
         event.accept()
 
     def keyPressEvent(self, event):
         if event.key() == Qt.Key.Key_Escape:
             self.close()
-        elif event.key() in (Qt.Key.Key_Plus, Qt.Key.Key_Equal, Qt.Key.Key_Minus):
-            self.set_scale(self.scale * (1 / 1.15 if event.key() == Qt.Key.Key_Minus else 1.15))
-        elif event.key() == Qt.Key.Key_0 and event.modifiers() & Qt.KeyboardModifier.ControlModifier:
-            self.set_scale(1)
         else:
             super().keyPressEvent(event)
 

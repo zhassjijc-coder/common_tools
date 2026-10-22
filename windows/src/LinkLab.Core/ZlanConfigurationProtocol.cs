@@ -86,6 +86,20 @@ public static class ZlanConfigurationProtocol
         }
         var packet = new byte[PacketLength]; packet[0] = 0x5A; packet[1] = 0x4C; packet[2] = 2; parameters.CopyTo(packet, 3); return packet;
     }
+    // Rev.4 defines reboot as command 0x02 with unchanged device parameters.
+    public static byte[] Restart(NetworkDeviceSnapshot original, string password = "")
+    {
+        if (!original.Writable) throw new InvalidOperationException("此固件参数格式未经验证，仅支持读取，不能重启。");
+        var packet = new byte[PacketLength]; packet[0] = 0x5A; packet[1] = 0x4C; packet[2] = 1; original.Parameters.CopyTo(packet, 3);
+        var parsed = ParseResponse(packet, original.Peer);
+        if (parsed.Identity != original.Identity || parsed.Settings != original.Settings) throw new InvalidOperationException("设备快照与原始参数不匹配，拒绝重启。");
+        if (original.PasswordRequired)
+        {
+            if (password.Length is < 1 or > 9 || password.Any(ch => ch is < ' ' or > '~')) throw new ArgumentException("此设备启用了配置密码，请填写 1–9 个 ASCII 可见字符的设备密码。");
+            SetText(packet, 24, 10, password);
+        }
+        packet[2] = 2; return packet;
+    }
     public static byte[] Redacted(ReadOnlySpan<byte> packet)
     {
         var safe = packet.ToArray();
@@ -159,6 +173,18 @@ public sealed class ZlanNetworkConfigurationBackend(int managementPort = ZlanCon
         var current = await Read(bindAddress, expected, timeout, ct);
         if (current.Settings != expected.Settings) throw new InvalidOperationException("设备参数已被其他操作修改，请重新读取并检查修改。");
         var packet = ZlanConfigurationProtocol.Write(current, settings, password);
+        return await SendAndVerify(bindAddress, current, settings, packet, timeout, ct, false);
+    }
+    public async Task<NetworkDeviceSnapshot> Restart(string bindAddress, NetworkDeviceSnapshot expected, string password, int timeout, CancellationToken ct)
+    {
+        // Re-read this DevID/channel and retain its complete current raw payload.
+        // Unsaved editor fields and stale cached parameters must never be sent.
+        var current = await Read(bindAddress, expected, timeout, ct);
+        var packet = ZlanConfigurationProtocol.Restart(current, password);
+        return await SendAndVerify(bindAddress, current, current.Settings, packet, timeout, ct, true);
+    }
+    private async Task<NetworkDeviceSnapshot> SendAndVerify(string bindAddress, NetworkDeviceSnapshot current, NetworkDeviceSettings settings, byte[] packet, int timeout, CancellationToken ct, bool restarting)
+    {
         ct.ThrowIfCancellationRequested();
         using (var socket = Socket(bindAddress)) { await socket.SendAsync(packet, new IPEndPoint(current.Peer.Address, managementPort), ct); Record("TX", packet, current.Peer); }
         // The documented 0x02 command restarts the device and defines no write ACK.
@@ -186,6 +212,7 @@ public sealed class ZlanNetworkConfigurationBackend(int managementPort = ZlanCon
                 if (readback is not null && ZlanConfigurationProtocol.Matches(readback, current, settings)) return readback;
             }
         }
+        if (restarting) throw new TimeoutException("重启指令已发送，但尚未回读同一设备，无法确认重启结果。请稍后重新搜索；不会自动重发重启指令。");
         throw new TimeoutException("配置报文已发送，但未能回读同一设备并确认参数。设备可能仍在重启、IP 已改变或拒绝了密码；请重新搜索确认，勿连续重复写入。");
     }
 }

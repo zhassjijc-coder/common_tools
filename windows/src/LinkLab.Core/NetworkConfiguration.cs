@@ -35,6 +35,7 @@ public interface INetworkConfigurationBackend
     event Action<WireEvent>? Traffic;
     Task<IReadOnlyList<NetworkDeviceSnapshot>> Discover(string bindAddress, string target, bool broadcast, int timeout, CancellationToken ct);
     Task<NetworkDeviceSnapshot> Read(string bindAddress, NetworkDeviceSnapshot expected, int timeout, CancellationToken ct);
+    Task<NetworkDeviceSnapshot> Restart(string bindAddress, NetworkDeviceSnapshot expected, string password, int timeout, CancellationToken ct);
     Task<NetworkDeviceSnapshot> Apply(string bindAddress, NetworkDeviceSnapshot expected, NetworkDeviceSettings settings, string password, int timeout, CancellationToken ct);
 }
 
@@ -105,7 +106,12 @@ public static class NetworkConfiguration
         var gateway = Ipv4(settings.Gateway, "网关", true).GetAddressBytes();
         var subnet = Ipv4Bytes(settings.Mask, "子网掩码");
         if (gateway.Any(value => value != 0) && Enumerable.Range(0, 4).Any(i => (ip[i] & subnet[i]) != (gateway[i] & subnet[i]))) throw new ArgumentException("网关必须与设备 IP 位于同一子网，或设置为 0.0.0.0。");
-        if (settings.LocalPort is < 1 or > 65535 || settings.DestinationPort is < 1 or > 65535) throw new ArgumentException("网络端口范围为 1–65535。");
+        // ZLAN TCP Client uses local port 0 to select an ephemeral port.
+        // Server/UDP listeners and the destination still require a fixed port.
+        int minimumLocalPort = settings.Mode == 1 ? 0 : 1;
+        if (settings.LocalPort < minimumLocalPort || settings.LocalPort > 65535) throw new ArgumentException(settings.Mode == 1
+            ? "TCP Client 本地端口范围为 0–65535（0 表示随机端口）。" : "当前工作模式的本地端口范围为 1–65535。");
+        if (settings.DestinationPort is < 1 or > 65535) throw new ArgumentException("目标端口范围为 1–65535。");
         if (settings.Mode is < 0 or > 3 || settings.Parity is < 0 or > 4 || !BaudRates.Contains(settings.Baud)) throw new ArgumentException("工作模式、校验或波特率不受当前协议支持。");
         if (settings.DataBits is < 5 or > 8 || settings.StopBits is < 1 or > 2 || settings.FlowControl is < 0 or > 3) throw new ArgumentException("串口格式不受当前协议支持。");
         if (settings.AppProtocol is < 0 or > 2) throw new ArgumentException("转化协议不受当前管理协议支持。");

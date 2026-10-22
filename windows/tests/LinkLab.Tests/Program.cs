@@ -132,5 +132,6 @@ await PlcTests.Run(Test);
 await MqttTests.Run(Test);
 await VirtualSerialTests.Run(Test);
 await Test("Device network configuration protocol and UDP loopback", NetworkConfigurationTests.Run);
+await Test("Device network restart protocol and UDP loopback", NetworkConfigurationTests.RunRestart);
 Console.WriteLine($"\n{passed} passed; {failed} failed.");
 return failed == 0 ? 0 : 1;

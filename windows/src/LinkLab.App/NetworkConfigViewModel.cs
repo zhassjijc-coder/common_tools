@@ -35,6 +35,7 @@ public sealed class NetworkConfigVm : PageVm
     public bool Idle => !Busy && !_closing;
     public bool CanRead => Idle && Selected is not null;
     public bool CanEdit => Idle && Selected is { Writable: true };
+    public bool CanRestart => CanEdit;
     public bool CanApply => CanEdit && _reviewed is not null;
     public string Password { get; set; } = "";
     public bool PasswordRequired => Selected?.PasswordRequired == true;
@@ -72,6 +73,7 @@ public sealed class NetworkConfigVm : PageVm
     public AsyncCommand QueryCommand { get; }
     public AsyncCommand ReadCommand { get; }
     public AsyncCommand ApplyCommand { get; }
+    public AsyncCommand RestartCommand { get; }
     public Command RefreshInterfacesCommand { get; }
     public Command ReviewCommand { get; }
     public Command RestoreCommand { get; }
@@ -84,12 +86,12 @@ public sealed class NetworkConfigVm : PageVm
         _backend = backend ?? new ZlanNetworkConfigurationBackend();
         _backend.Traffic += Hub.Record;
         SearchCommand = Action(() => Search(true)); QueryCommand = Action(() => Search(false));
-        ReadCommand = Action(Read); ApplyCommand = Action(Apply);
+        ReadCommand = Action(Read); ApplyCommand = Action(Apply); RestartCommand = Action(Restart);
         RefreshInterfacesCommand = Safe(() => { Interfaces = NetworkConfiguration.Interfaces(); Raise(nameof(Interfaces)); if (!Interfaces.Any(nic => nic.Address == BindAddress)) { BindAddress = "0.0.0.0"; Raise(nameof(BindAddress)); } });
         ReviewCommand = Safe(Review); RestoreCommand = Safe(() => { if (Selected is not null) Load(Selected.Settings); });
         ExportCommand = Safe(Export); ImportCommand = Safe(Import); ClearLogCommand = Safe(() => Log = "日志已清空。");
     }
-    private void Changed() { Raise(nameof(Idle)); Raise(nameof(CanRead)); Raise(nameof(CanEdit)); Raise(nameof(CanApply)); Raise(nameof(SelectedLabel)); Raise(nameof(CountText)); Raise(nameof(PasswordRequired)); Raise(nameof(CanUseDns)); Raise(nameof(CanUseDhcp)); }
+    private void Changed() { Raise(nameof(Idle)); Raise(nameof(CanRead)); Raise(nameof(CanEdit)); Raise(nameof(CanRestart)); Raise(nameof(CanApply)); Raise(nameof(SelectedLabel)); Raise(nameof(CountText)); Raise(nameof(PasswordRequired)); Raise(nameof(CanUseDns)); Raise(nameof(CanUseDhcp)); }
     private void InvalidatePreview() { _reviewed = null; Preview = ""; Raise(nameof(CanApply)); }
     private Command Safe(Action action) => new(() => { try { if (Idle) { HasError = false; action(); } } catch (Exception ex) { Error(ex); } });
     private AsyncCommand Action(Func<Task> action) => new(() => Run(action), Error);
@@ -119,6 +121,21 @@ public sealed class NetworkConfigVm : PageVm
         var result = await _backend.Read(BindAddress, selected, WaitTime(), _stop.Token);
         Upsert(result); Selected = Devices.First(device => device.Identity == result.Identity); Status = "已重读设备参数。"; Append(Status);
     }
+    public async Task Restart()
+    {
+        var selected = Selected ?? throw new InvalidOperationException("请先选择设备。");
+        _ = ZlanConfigurationProtocol.Restart(selected, Password);
+        if (MessageBox.Show($"设备 {selected.Identity}\n当前 IP {selected.Address}\n\n重启将暂时中断设备通信，并保留设备当前参数。编辑区尚未写入的修改不会发送。\n是否重启此设备？", "确认重启所选设备", MessageBoxButton.OKCancel, MessageBoxImage.Warning) != MessageBoxResult.OK) return;
+        await RestartConfirmed(selected);
+    }
+    internal async Task RestartConfirmed(NetworkDeviceSnapshot selected)
+    {
+        Status = $"正在确认 {selected.Identity} 的身份并发送重启指令，等待设备回读…";
+        var result = await _backend.Restart(BindAddress, selected, Password, WaitTime(), _stop.Token);
+        Upsert(result); Selected = Devices.First(device => device.Identity == result.Identity);
+        Load(result.Settings);
+        Status = "重启指令已发送：已重新读到同一 DevID 的设备，参数一致。"; Append(Status);
+    }
     private void Upsert(NetworkDeviceSnapshot value)
     {
         var old = Devices.FirstOrDefault(device => device.Identity == value.Identity);
@@ -133,7 +150,7 @@ public sealed class NetworkConfigVm : PageVm
     }
     public NetworkDeviceSettings Settings()
     {
-        var settings = new NetworkDeviceSettings(Name.Trim(), Address.Trim(), Mask.Trim(), Gateway.Trim(), Int(LocalPort, 1, 65535, "本地端口"), Destination.Trim(), Int(DestinationPort, 1, 65535, "目标端口"), Mode, Baud, Parity, Dhcp, DataBits, StopBits, FlowControl, AppProtocol);
+        var settings = new NetworkDeviceSettings(Name.Trim(), Address.Trim(), Mask.Trim(), Gateway.Trim(), Int(LocalPort, Mode == 1 ? 0 : 1, 65535, "本地端口"), Destination.Trim(), Int(DestinationPort, 1, 65535, "目标端口"), Mode, Baud, Parity, Dhcp, DataBits, StopBits, FlowControl, AppProtocol);
         NetworkConfiguration.Validate(settings); return settings;
     }
     public void Review()
@@ -144,7 +161,7 @@ public sealed class NetworkConfigVm : PageVm
         _ = ZlanConfigurationProtocol.Write(selected, candidate, Password);
         _reviewed = candidate;
         var value = _reviewed;
-        Preview = $"设备 {selected.Identity}  ·  当前 IP {selected.Address}\n名称 {value.Name}  ·  新 IP {value.Address} / {value.Mask}\n网关 {value.Gateway}  ·  本地端口 {value.LocalPort}  ·  {(value.Dhcp ? "DHCP" : "静态 IP")}\n{Modes[value.Mode]} → {value.Destination}:{value.DestinationPort}\n串口 {value.Baud} / {value.DataBits}{Parities[value.Parity]}{value.StopBits}  ·  流控 {FlowControls[value.FlowControl]}\n转化协议 {AppProtocols[value.AppProtocol]}\n写入后设备会重启；仅在重新读到同一设备并核对参数后显示成功。";
+        Preview = $"设备 {selected.Identity}  ·  当前 IP {selected.Address}\n名称 {value.Name}  ·  新 IP {value.Address} / {value.Mask}\n网关 {value.Gateway}  ·  本地端口 {(value.LocalPort == 0 ? "0（随机）" : value.LocalPort.ToString())}  ·  {(value.Dhcp ? "DHCP" : "静态 IP")}\n{Modes[value.Mode]} → {value.Destination}:{value.DestinationPort}\n串口 {value.Baud} / {value.DataBits}{Parities[value.Parity]}{value.StopBits}  ·  流控 {FlowControls[value.FlowControl]}\n转化协议 {AppProtocols[value.AppProtocol]}\n写入后设备会重启；仅在重新读到同一设备并核对参数后显示成功。";
         Raise(nameof(CanApply)); Status = "请核对目标设备与参数，再点击确认写入。";
     }
     public async Task Apply()

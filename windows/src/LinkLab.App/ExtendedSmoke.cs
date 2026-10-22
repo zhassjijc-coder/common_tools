@@ -102,7 +102,7 @@ internal static class ExtendedSmoke
         dpiOverlay.ZoomForVerification(.5); Check(DesktopCapture.Png(dpiOverlay.SelectedImage()).SequenceEqual(DesktopCapture.Png(dpiMarked)), "zooming out preserves high-DPI marked pixels");
         dpiOverlay.Close();
         var pin = vm.Quick.PinImage(annotatedCrop, false, originalCrop); pin.WindowStartupLocation = WindowStartupLocation.Manual; pin.Left = -16000; pin.Top = 0; pin.Topmost = false; pin.ShowActivated = false; pin.Show();
-        pin.ScaleForVerification(2); Check(pin.ImageScale == 2, "pin zoom enlarges"); pin.ScaleForVerification(.5); Check(pin.ImageScale == .5, "pin zoom shrinks"); pin.ScaleForVerification(1); Check(pin.ImageScale == 1, "pin original scale reset");
+        pin.ScaleForVerification(2); Check(pin.ImageScale > .5 && pin.ImageScale <= 2, "pin zoom enlarges up to screen bounds"); pin.ScaleForVerification(.5); Check(pin.ImageScale == .5, "pin zoom shrinks"); pin.ScaleForVerification(1); Check(pin.ImageScale > .5 && pin.ImageScale <= 1, "pin original scale respects screen bounds");
         await App.Capture(pin, Path.Combine(output, "pinned-image.png")); pin.Close();
         var interrupted = new QuickVm(new Hub(), new NoopHotkeys()) { Enabled = true }; interrupted.CaptureCommand.Execute(null); interrupted.Enabled = false; interrupted.Enabled = true;
         for (int n = 0; n < 60 && !interrupted.CaptureCommand.CanExecute(null); n++) await Task.Delay(20);

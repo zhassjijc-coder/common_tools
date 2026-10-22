@@ -31,4 +31,4 @@ Enable capture, press **F1**, and drag to select a region. You can then continue
 - Copy, save and pin export the annotated image. OCR reads the original region so annotations do not interfere with recognition.
 - Press **Enter** to complete capture or **Esc** to cancel.
 
-After **F3** pinning, drag the floating image to move it and use the wheel to zoom. Reset its scale to return to 100%; **Ctrl + wheel** changes opacity. The pin menu also offers copying and OCR.
+After **F3** pinning, drag the floating image to move it. Only the wheel changes image scale; the percentage appears below the image. **Ctrl + wheel** changes opacity. The fixed window preserves aspect ratio without resize handles or scrollbars, fitting the entire image within the current screen. The top toolbar contains only Copy and OCR, both using the original image.

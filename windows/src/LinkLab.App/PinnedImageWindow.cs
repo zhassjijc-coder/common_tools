@@ -1,6 +1,7 @@
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
+using System.Windows.Interop;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 
@@ -9,74 +10,60 @@ namespace LinkLab.App;
 public sealed class PinnedImageWindow : Window
 {
     private readonly BitmapSource _image;
-    private readonly TextBlock _scaleLabel = new() { VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(6, 0, 6, 0), FontSize = 12 };
-    private readonly ScrollViewer _viewport;
     private readonly Image _picture;
+    private readonly TextBlock _zoom;
     private double _scale;
     internal double ImageScale => _scale;
     public PinnedImageWindow(BitmapSource image, Action<BitmapSource> copy, Action<BitmapSource> ocr)
     {
         _image = image;
-        Title = "设备联调工具 · 贴图 · 拖动移动 / 滚轮缩放 / Ctrl+滚轮透明度 / Ctrl+0 原始比例";
-        WindowStyle = WindowStyle.None; ResizeMode = ResizeMode.CanResizeWithGrip; Topmost = true; ShowInTaskbar = false;
-        MinWidth = 260; MinHeight = 150; WindowStartupLocation = WindowStartupLocation.CenterScreen;
+        Title = "设备联调工具 · 贴图 · 拖动移动 / 滚轮缩放 / Ctrl+滚轮透明度 / 双击或 Esc 关闭";
+        WindowStyle = WindowStyle.None; ResizeMode = ResizeMode.NoResize; Topmost = true; ShowInTaskbar = false;
+        WindowStartupLocation = WindowStartupLocation.CenterScreen;
         BorderThickness = new Thickness(1); SetResourceReference(BackgroundProperty, "Card"); SetResourceReference(ForegroundProperty, "Text"); SetResourceReference(BorderBrushProperty, "Line");
         var root = new DockPanel(); root.SetResourceReference(Panel.BackgroundProperty, "Card");
-        var toolbar = new WrapPanel(); toolbar.SetResourceReference(Panel.BackgroundProperty, "Card");
-        foreach (var (label, action) in new (string, Action)[]
-        {
-            ("复制", () => copy(image)), ("识别", () => ocr(image)), ("−", () => SetScale(_scale / 1.15)),
-            ("+", () => SetScale(_scale * 1.15)), ("100%", () => SetScale(1)), ("适应", Fit), ("关闭", Close)
-        })
+        var toolbar = new StackPanel { Orientation = Orientation.Horizontal, Height = 38 };
+        foreach (var (label, action) in new (string, Action)[] { ("复制", () => copy(image)), ("识别", () => ocr(image)) })
         {
             var button = new Button { Content = label, Padding = new Thickness(8, 5, 8, 5), Margin = new Thickness(2), FontSize = 12, Focusable = false };
             button.Click += (_, _) => action(); toolbar.Children.Add(button);
         }
-        toolbar.Children.Add(_scaleLabel); DockPanel.SetDock(toolbar, Dock.Top); root.Children.Add(toolbar);
-        var tips = new TextBlock { Text = "拖动图片移动 · 滚轮缩放 · Ctrl+滚轮透明度 · 双击 / Esc 关闭", FontSize = 10, Padding = new Thickness(7, 3, 7, 4), TextWrapping = TextWrapping.Wrap };
-        tips.SetResourceReference(TextBlock.ForegroundProperty, "Muted"); DockPanel.SetDock(tips, Dock.Bottom); root.Children.Add(tips);
+        DockPanel.SetDock(toolbar, Dock.Top); root.Children.Add(toolbar);
+        _zoom = new TextBlock { Height = 24, FontSize = 11, Padding = new Thickness(6, 3, 6, 3), TextAlignment = TextAlignment.Center };
+        _zoom.SetResourceReference(TextBlock.ForegroundProperty, "Muted"); DockPanel.SetDock(_zoom, Dock.Bottom); root.Children.Add(_zoom);
         _picture = new Image { Source = image, Stretch = Stretch.Fill, HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center };
-        _viewport = new ScrollViewer { Content = _picture, HorizontalScrollBarVisibility = ScrollBarVisibility.Auto, VerticalScrollBarVisibility = ScrollBarVisibility.Auto, CanContentScroll = false };
-        root.Children.Add(_viewport); Content = root;
-        double initial = Math.Min(1, Math.Min(850d / image.PixelWidth, 600d / image.PixelHeight));
-        Width = Math.Max(320, image.PixelWidth * initial + 4); Height = Math.Max(200, image.PixelHeight * initial + 80);
-        SetScale(initial, false);
+        root.Children.Add(_picture); Content = root;
+        SetScale(Math.Min(1, Math.Min(850d / image.PixelWidth, 600d / image.PixelHeight)));
         Loaded += (_, _) => SetScale(_scale);
-        DpiChanged += (_, e) => SetScale(_scale, dpiOverride: e.NewDpi);
+        DpiChanged += (_, e) => SetScale(_scale, e.NewDpi);
         MouseLeftButtonDown += (_, e) => { if (e.ClickCount == 2) Close(); else DragMove(); };
         PreviewMouseWheel += (_, e) =>
         {
+            if (e.Delta == 0) return;
             if (Keyboard.Modifiers.HasFlag(ModifierKeys.Control)) Opacity = Math.Clamp(Opacity + (e.Delta > 0 ? .1 : -.1), .2, 1);
-            else SetScale(_scale * (e.Delta > 0 ? 1.15 : 1 / 1.15));
+            else SetScale(_scale * Math.Pow(1.15, e.Delta / 120d));
             e.Handled = true;
         };
-        KeyDown += (_, e) =>
-        {
-            if (e.Key == Key.Escape) Close();
-            else if (e.Key == Key.D0 && Keyboard.Modifiers.HasFlag(ModifierKeys.Control)) SetScale(1);
-            else if (e.Key is Key.Add or Key.OemPlus) SetScale(_scale * 1.15);
-            else if (e.Key is Key.Subtract or Key.OemMinus) SetScale(_scale / 1.15);
-        };
+        KeyDown += (_, e) => { if (e.Key == Key.Escape) Close(); };
         ToolTip = Title;
     }
-    private void Fit()
-    {
-        var dpi = VisualTreeHelper.GetDpi(this);
-        SetScale(Math.Min(Math.Max(50, _viewport.ActualWidth - 8) * dpi.DpiScaleX / _image.PixelWidth,
-            Math.Max(50, _viewport.ActualHeight - 8) * dpi.DpiScaleY / _image.PixelHeight), false);
-    }
-    private void SetScale(double scale, bool resize = true, DpiScale? dpiOverride = null)
+    private void SetScale(double scale, DpiScale? dpiOverride = null)
     {
         var dpi = dpiOverride ?? VisualTreeHelper.GetDpi(this);
-        _scale = Math.Clamp(scale, .1, 8); _picture.Width = _image.PixelWidth * _scale / dpi.DpiScaleX; _picture.Height = _image.PixelHeight * _scale / dpi.DpiScaleY;
-        _scaleLabel.Text = $"{_scale:P0}";
-        if (!resize) return;
-        double maxWidth = Math.Max(MinWidth, SystemParameters.WorkArea.Width * .9), maxHeight = Math.Max(MinHeight, SystemParameters.WorkArea.Height * .9);
-        // Include the native resize frame and the measured toolbar/footer, so a
-        // 100% image does not acquire scrollbars merely because of window chrome.
-        double chromeWidth = IsLoaded && _viewport.ActualWidth > 0 ? Math.Max(4, ActualWidth - _viewport.ActualWidth) + 2 : 24;
-        double chromeHeight = IsLoaded && _viewport.ActualHeight > 0 ? Math.Max(80, ActualHeight - _viewport.ActualHeight) + 2 : 110;
-        Width = Math.Clamp(_picture.Width + chromeWidth, MinWidth, maxWidth); Height = Math.Clamp(_picture.Height + chromeHeight, MinHeight, maxHeight);
+        var handle = new WindowInteropHelper(this).Handle;
+        var screen = handle == IntPtr.Zero ? System.Windows.Forms.Screen.FromPoint(System.Windows.Forms.Cursor.Position) : System.Windows.Forms.Screen.FromHandle(handle);
+        double maxWidth = screen.WorkingArea.Width * .9 / dpi.DpiScaleX;
+        double maxHeight = screen.WorkingArea.Height * .9 / dpi.DpiScaleY;
+        // One scale controls both dimensions. Limit the scale itself before
+        // sizing the window, so the entire image stays visible without scrolling.
+        double fit = Math.Min(Math.Max(1, maxWidth - 2) * dpi.DpiScaleX / _image.PixelWidth,
+            Math.Max(1, maxHeight - 64) * dpi.DpiScaleY / _image.PixelHeight);
+        double maximum = Math.Min(8, fit);
+        _scale = Math.Clamp(scale, Math.Min(.01, maximum), maximum);
+        _picture.Width = _image.PixelWidth * _scale / dpi.DpiScaleX;
+        _picture.Height = _image.PixelHeight * _scale / dpi.DpiScaleY;
+        Width = Math.Max(126, _picture.Width + 2); Height = _picture.Height + 64;
+        _zoom.Text = $"{_scale * 100:0.#}% · 滚轮缩放";
     }
     internal void ScaleForVerification(double scale) => SetScale(scale);
 }

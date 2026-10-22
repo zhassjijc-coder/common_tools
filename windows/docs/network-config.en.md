@@ -22,3 +22,9 @@ JSON templates contain editable settings only, excluding device identity, raw re
 Writing currently supports the documented 167-byte parameter format. Other recognized lengths are read-only. Firmware upgrades, P2P, password changes and other vendors' private protocols are not implemented. This module does not modify the computer's own network-interface addresses.
 
 Protocol encoding/decoding, device-identity checks and UDP interaction are verified against a local simulated device. Physical models and firmware still require hardware validation.
+
+## Restart the selected device
+
+Select a device and choose **重启所选设备** (Restart selected device), then confirm its DevID and IP. The app reads the latest full device parameters and sends one documented 0x02 command without applying unsaved editor fields. A configuration password is required when enabled. Readback confirms the same device responds with matching settings; the protocol has no independent reboot-complete acknowledgement. Timeouts remain unconfirmed and never resend the control command automatically.
+
+In TCP Client mode, local port **0** selects an ephemeral port; fixed local ports may be 1–65535. TCP Server, UDP and UDP Multicast local ports, and all destination ports, must remain 1–65535. Review and writing preserve the client zero port, displayed as “0（随机）” in the preview.
